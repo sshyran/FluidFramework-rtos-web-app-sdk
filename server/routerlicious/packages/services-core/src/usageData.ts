@@ -11,9 +11,9 @@ export enum MeterType {
 }
 
 export interface IUsageData {
-    type: MeterType,
-    value: number,
-    tenantId: string,
-    documentId: string,
-    clientId: string
+    type: MeterType;
+    value: number;
+    tenantId: string;
+    documentId: string;
+    clientId: string;
 }
