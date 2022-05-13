@@ -52,7 +52,7 @@ export const executeRedisMultiWithHmsetExpire = async (
 export const executeRedisMultiWithHmsetLpushExpire = async (
     client: Redis,
     hKey: string,
-    hData: { [key: string]: any },
+    hData: { [key: string]: any; },
     lKey: string,
     lData: string,
     expireAfterSeconds: number): Promise<void> => new Promise<void>((resolve, reject) => {
