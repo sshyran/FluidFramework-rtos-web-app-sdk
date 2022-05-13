@@ -3,22 +3,39 @@
  * Licensed under the MIT License.
  */
 
-import { IThrottlingMetrics, IThrottleStorageManager } from "@fluidframework/server-services-core";
+import { IThrottlingMetrics, IThrottleStorageManager, IUsageData } from "@fluidframework/server-services-core";
 
 /**
  * In-memory cache implementation of IThrottleManager for testing
  */
 export class TestThrottleStorageManager implements IThrottleStorageManager {
-    private readonly cache: { [key: string]: IThrottlingMetrics; } = {};
+    private readonly throttlingCache: { [key: string]: IThrottlingMetrics } = {};
+    private readonly usageCache: { [key: string]: IUsageData } = {};
 
     async setThrottlingMetric(
         id: string,
         throttleMetric: IThrottlingMetrics,
     ): Promise<void> {
-        this.cache[id] = throttleMetric;
+        this.throttlingCache[id] = throttleMetric;
     }
 
     async getThrottlingMetric(id: string): Promise<IThrottlingMetrics> {
-        return this.cache[id];
+        return this.throttlingCache[id];
+    }
+
+    async setThrottlingMetricAndUsageData(
+        id: string,
+        throttleMetric: IThrottlingMetrics,
+        usageData: IUsageData): Promise<void> {
+            this.throttlingCache[id] = throttleMetric;
+            this.usageCache[id] = usageData;
+    }
+
+    async setUsageData(id: string, usageData: IUsageData): Promise<void> {
+        this.usageCache[id] = usageData;
+    }
+
+    async getUsageData(id: string): Promise<IUsageData> {
+        return this.usageCache[id];
     }
 }

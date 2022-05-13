@@ -4,6 +4,7 @@
  */
 
 import { INackContent, NackErrorType } from "@fluidframework/protocol-definitions";
+import { IUsageData } from ".";
 
 export interface IThrottlerResponse {
     throttleStatus: boolean;
@@ -46,6 +47,24 @@ export interface IThrottleStorageManager {
      * Get throttling metrics for the given id.
      */
     getThrottlingMetric(id: string): Promise<IThrottlingMetrics>;
+
+    /**
+     * Store throttling metrics and usage data for the given id.
+     */
+     setThrottlingMetricAndUsageData(
+        id: string,
+        throttlingMetric: IThrottlingMetrics,
+        usageData: IUsageData): Promise<void>;
+
+    /**
+     * Store usage data for the given id.
+     */
+    setUsageData(id: string, usageData: IUsageData): Promise<void>;
+
+    /**
+     * Get usage data for the given id.
+     */
+    getUsageData(id: string): Promise<IUsageData>;
 }
 
 /**

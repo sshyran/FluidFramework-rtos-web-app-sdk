@@ -6,8 +6,12 @@
 import {
     IThrottleStorageManager,
     IThrottlingMetrics,
+    IUsageData,
 } from "@fluidframework/server-services-core";
-import { executeRedisMultiWithHmsetExpire, IRedisParameters } from "@fluidframework/server-services-utils";
+import { executeRedisMultiWithHmsetExpire,
+         executeRedisMultiWithHmsetLpushExpire,
+         executeRedisMultiWithLpushExpire,
+         IRedisParameters } from "@fluidframework/server-services-utils";
 import { Redis } from "ioredis";
 import * as winston from "winston";
 import { CommonProperties, Lumberjack } from "@fluidframework/server-services-telemetry";
@@ -17,7 +21,8 @@ import { CommonProperties, Lumberjack } from "@fluidframework/server-services-te
  */
 export class RedisThrottleStorageManager implements IThrottleStorageManager {
     private readonly expireAfterSeconds: number = 60 * 60 * 24;
-    private readonly prefix: string = "throttle";
+    private readonly throttlingPrefix: string = "throttle";
+    private readonly usagePrefix: string = "usage";
 
     constructor(
         private readonly client: Redis,
@@ -27,7 +32,7 @@ export class RedisThrottleStorageManager implements IThrottleStorageManager {
         }
 
         if (parameters?.prefix) {
-            this.prefix = parameters.prefix;
+            this.throttlingPrefix = parameters.prefix;
         }
 
         client.on("error", (error) => {
@@ -43,32 +48,77 @@ export class RedisThrottleStorageManager implements IThrottleStorageManager {
         id: string,
         throttlingMetric: IThrottlingMetrics,
     ): Promise<void> {
-        const key = this.getKey(id);
+        const throttlingKey = this.getThrottlingKey(id);
 
         return executeRedisMultiWithHmsetExpire(
             this.client,
-            key,
+            throttlingKey,
             throttlingMetric as { [key: string]: any; },
             this.expireAfterSeconds);
     }
 
+    public async setThrottlingMetricAndUsageData(
+        id: string,
+        throttlingMetric: IThrottlingMetrics,
+        usageData: IUsageData,
+    ): Promise<void> {
+        const throttlingKey = this.getThrottlingKey(id);
+        const usageKey = this.getUsageKey(id);
+        const usageDataString = JSON.stringify(usageData);
+
+        return executeRedisMultiWithHmsetLpushExpire(
+            this.client,
+            throttlingKey,
+            throttlingMetric as { [key: string]: any },
+            usageKey,
+            usageDataString,
+            this.expireAfterSeconds);
+    }
+
+    public async setUsageData(
+        id: string,
+        usageData: IUsageData,
+    ): Promise<void> {
+        const usageKey = this.getUsageKey(id);
+        const usageDataString = JSON.stringify(usageData);
+
+        return executeRedisMultiWithLpushExpire(
+            this.client,
+            usageKey,
+            usageDataString,
+            this.expireAfterSeconds);
+    }
+
+    public async getUsageData(id: string): Promise<IUsageData> {
+        const usageKey = this.getUsageKey(id);
+        const usageDataString = await this.client.rpop(usageKey);
+        const usageData = JSON.parse(usageDataString) as IUsageData;
+        return usageData;
+    }
+
     public async getThrottlingMetric(id: string): Promise<IThrottlingMetrics | undefined> {
-        const throttlingMetric = await this.client.hgetall(this.getKey(id));
-        if (Object.keys(throttlingMetric).length === 0) {
+        const throttlingMetricRedis = await this.client.hgetall(this.getThrottlingKey(id));
+        if (Object.keys(throttlingMetricRedis).length === 0) {
             return undefined;
         }
 
         // All values retrieved from Redis are strings, so they must be parsed
-        return {
-            count: Number.parseInt(throttlingMetric.count, 10),
-            lastCoolDownAt: Number.parseInt(throttlingMetric.lastCoolDownAt, 10),
-            throttleStatus: throttlingMetric.throttleStatus === "true",
-            throttleReason: throttlingMetric.throttleReason,
-            retryAfterInMs: Number.parseInt(throttlingMetric.retryAfterInMs, 10),
+        let throttlingMetric = {
+            count: Number.parseInt(throttlingMetricRedis.count, 10),
+            lastCoolDownAt: Number.parseInt(throttlingMetricRedis.lastCoolDownAt, 10),
+            throttleStatus: throttlingMetricRedis.throttleStatus === "true",
+            throttleReason: throttlingMetricRedis.throttleReason,
+            retryAfterInMs: Number.parseInt(throttlingMetricRedis.retryAfterInMs, 10),
         };
+
+        return throttlingMetric;
     }
 
-    private getKey(id: string): string {
-        return `${this.prefix}:${id}`;
+    private getThrottlingKey(id: string): string {
+        return `${this.throttlingPrefix}:${id}`;
+    }
+
+    private getUsageKey(id: string): string {
+        return `${this.usagePrefix}:${id}`;
     }
 }

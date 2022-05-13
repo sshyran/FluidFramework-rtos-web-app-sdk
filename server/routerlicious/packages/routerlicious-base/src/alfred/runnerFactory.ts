@@ -87,6 +87,7 @@ export class AlfredResources implements core.IResources {
         public restThrottler: core.IThrottler,
         public socketConnectThrottler: core.IThrottler,
         public socketSubmitOpThrottler: core.IThrottler,
+        public socketSubmitSignalThrottler: core.IThrottler,
         public singleUseTokenCache: core.ICache,
         public storage: core.IDocumentStorage,
         public appTenants: IAlfredTenant[],
@@ -95,6 +96,7 @@ export class AlfredResources implements core.IResources {
         public documentsCollectionName: string,
         public metricClientConfig: any,
         public documentsCollection: core.ICollection<core.IDocument>,
+        public throttleStorageManager?: core.IThrottleStorageManager,
     ) {
         const socketIoAdapterConfig = config.get("alfred:socketIoAdapter");
         const httpServerConfig: services.IHttpServerConfig = config.get("system:httpServer");
@@ -239,7 +241,8 @@ export class AlfredResourcesFactory implements core.IResourcesFactory<AlfredReso
             throttleStorageManager,
             throttleMaxRequestsPerMs,
             throttleMaxRequestBurst,
-            throttleMinRequestCooldownIntervalInMs);
+            throttleMinRequestCooldownIntervalInMs,
+            false);
         const restThrottler = new services.Throttler(
             restThrottlerHelper,
             throttleMinRequestThrottleIntervalInMs,
@@ -259,6 +262,7 @@ export class AlfredResourcesFactory implements core.IResourcesFactory<AlfredReso
             throttleMaxSocketConnectionsPerMs,
             throttleMaxSocketConnectionBurst,
             throttleMinSocketConnectionCooldownIntervalInMs,
+            false,
         );
         const socketConnectThrottler = new services.Throttler(
             socketConnectThrottlerHelper,
@@ -278,10 +282,31 @@ export class AlfredResourcesFactory implements core.IResourcesFactory<AlfredReso
             throttleStorageManager,
             throttleMaxSubmitOpsPerMs,
             throttleMaxSubmitOpBurst,
-            throttleMinSubmitOpCooldownIntervalInMs);
+            throttleMinSubmitOpCooldownIntervalInMs,
+            false);
         const socketSubmitOpThrottler = new services.Throttler(
             socketSubmitOpThrottlerHelper,
             throttleMinSubmitOpThrottleIntervalInMs,
+            winston);
+
+        // Socket SubmitSignal Throttler
+        const throttleMaxSubmitSignalsPerMs =
+            config.get("alfred:throttling:submitSignals:maxPerMs") as number | undefined;
+        const throttleMaxSubmitSignalBurst =
+            config.get("alfred:throttling:submitSignals:maxBurst") as number | undefined;
+        const throttleMinSubmitSignalCooldownIntervalInMs =
+            config.get("alfred:throttling:submitSignals:minCooldownIntervalInMs") as number | undefined;
+        const throttleMinSubmitSignalThrottleIntervalInMs =
+            config.get("alfred:throttling:submitSignals:minThrottleIntervalInMs") as number | undefined;
+        const socketSubmitSignalThrottlerHelper = new services.ThrottlerHelper(
+            throttleStorageManager,
+            throttleMaxSubmitSignalsPerMs,
+            throttleMaxSubmitSignalBurst,
+            throttleMinSubmitSignalCooldownIntervalInMs,
+            true);
+        const socketSubmitSignalThrottler = new services.Throttler(
+            socketSubmitSignalThrottlerHelper,
+            throttleMinSubmitSignalThrottleIntervalInMs,
             winston);
 
         const databaseManager = new core.MongoDatabaseManager(
@@ -343,6 +368,7 @@ export class AlfredResourcesFactory implements core.IResourcesFactory<AlfredReso
             restThrottler,
             socketConnectThrottler,
             socketSubmitOpThrottler,
+            socketSubmitSignalThrottler,
             redisJwtCache,
             storage,
             appTenants,
@@ -350,7 +376,8 @@ export class AlfredResourcesFactory implements core.IResourcesFactory<AlfredReso
             port,
             documentsCollectionName,
             metricClientConfig,
-            documentsCollection);
+            documentsCollection,
+            throttleStorageManager);
     }
 }
 
@@ -365,6 +392,7 @@ export class AlfredRunnerFactory implements core.IRunnerFactory<AlfredResources>
             resources.restThrottler,
             resources.socketConnectThrottler,
             resources.socketSubmitOpThrottler,
+            resources.socketSubmitSignalThrottler,
             resources.singleUseTokenCache,
             resources.storage,
             resources.clientManager,
@@ -372,6 +400,7 @@ export class AlfredRunnerFactory implements core.IRunnerFactory<AlfredResources>
             resources.mongoManager,
             resources.producer,
             resources.metricClientConfig,
-            resources.documentsCollection);
+            resources.documentsCollection,
+            resources.throttleStorageManager);
     }
 }

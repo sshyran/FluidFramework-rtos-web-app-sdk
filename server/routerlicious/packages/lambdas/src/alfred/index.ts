@@ -79,6 +79,11 @@ const getSocketConnectThrottleId = (tenantId: string) => `${tenantId}_OpenSocket
 
 const getSubmitOpThrottleId = (clientId: string, tenantId: string) => `${clientId}_${tenantId}_SubmitOp`;
 
+const getConnectivityMinutesUsageId =
+    (clientId: string, tenantId: string) => `${clientId}_${tenantId}_ConnectivityMiniutes`;
+
+const getSubmitSignalThrottleId = (clientId: string, tenantId: string) => `${clientId}_${tenantId}_SubmitSignal`;
+
 // Sanitize the received op before sending.
 function sanitizeMessage(message: any): IDocumentMessage {
     // Trace sampling.
@@ -177,7 +182,9 @@ export function configureWebSocketServices(
     maxTokenLifetimeSec: number = 60 * 60,
     isTokenExpiryEnabled: boolean = false,
     connectThrottler?: core.IThrottler,
-    submitOpThrottler?: core.IThrottler) {
+    submitOpThrottler?: core.IThrottler,
+    submitSignalThrottler?: core.IThrottler,
+    throttleStorageManager?: core.IThrottleStorageManager) {
     webSocketServer.on("connection", (socket: core.IWebSocket) => {
         // Map from client IDs on this connection to the object ID and user info.
         const connectionsMap = new Map<string, core.IOrdererConnection>();
@@ -185,6 +192,8 @@ export function configureWebSocketServices(
         const roomMap = new Map<string, IRoom>();
         // Map from client Ids to scope.
         const scopeMap = new Map<string, string[]>();
+        // Map from client Ids to connection time.
+        const connectionTimeMap = new Map<string, number>();
 
         // Timer to check token expiry for this socket connection
         let expirationTimer: NodeJS.Timer | undefined;
@@ -260,6 +269,7 @@ export function configureWebSocketServices(
             }
 
             const connectedTimestamp = Date.now();
+            connectionTimeMap.set(clientId, connectedTimestamp);
 
             // Todo: should all the client details come from the claims???
             // we are still trusting the users permissions and type here.
@@ -517,6 +527,20 @@ export function configureWebSocketServices(
                     const nackMessage = createNackMessage(400, NackErrorType.BadRequestError, "Nonexistent client");
                     socket.emit("nack", "", [nackMessage]);
                 } else {
+                    const throttleError = checkThrottle(
+                        submitSignalThrottler,
+                        getSubmitSignalThrottleId(clientId, room.tenantId),
+                        room.tenantId,
+                        logger);
+                    if (throttleError) {
+                        const nackMessage = createNackMessage(
+                            throttleError.code,
+                            NackErrorType.ThrottlingError,
+                            throttleError.message,
+                            throttleError.retryAfter);
+                        socket.emit("nack", "", [nackMessage]);
+                        return;
+                    }
                     contentBatches.forEach((contentBatche) => {
                         const contents = Array.isArray(contentBatche) ? contentBatche : [contentBatche];
 
@@ -545,6 +569,21 @@ export function configureWebSocketServices(
                 );
                 // eslint-disable-next-line @typescript-eslint/no-floating-promises
                 connection.disconnect();
+                const now = Date.now();
+                const connectionTimestamp = connectionTimeMap.get(clientId) ?? now;
+                const connectionTimeInMinutes = (now - connectionTimestamp) / 60000;
+                const key = getConnectivityMinutesUsageId(clientId, connection.tenantId);
+                Lumberjack.info(
+                    `Pushing usage data - id: ${key} value: ${connectionTimeInMinutes}, clientId: ${clientId},
+                     connectedAt: ${new Date(connectionTimestamp).toLocaleString()}, disconnectedAt: ${new Date(now).toLocaleString()}`,
+                     getLumberBaseProperties(connection.documentId, connection.tenantId),
+                );
+                await throttleStorageManager?.setUsageData(key, {
+                    type: core.MeterType.ClientConnectivityMinutes,
+                    value: connectionTimeInMinutes,
+                    tenantId: connection.tenantId,
+                    documentId: connection.documentId,
+                    clientId});
             }
             // Send notification messages for all client IDs in the room map
             const removeP: Promise<void>[] = [];
