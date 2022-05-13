@@ -575,7 +575,8 @@ export function configureWebSocketServices(
                 const key = getConnectivityMinutesUsageId(clientId, connection.tenantId);
                 Lumberjack.info(
                     `Pushing usage data - id: ${key} value: ${connectionTimeInMinutes}, clientId: ${clientId},
-                     connectedAt: ${new Date(connectionTimestamp).toLocaleString()}, disconnectedAt: ${new Date(now).toLocaleString()}`,
+                     connectedAt: ${new Date(connectionTimestamp).toLocaleString()},
+                     disconnectedAt: ${new Date(now).toLocaleString()}`,
                      getLumberBaseProperties(connection.documentId, connection.tenantId),
                 );
                 await throttleStorageManager?.setUsageData(key, {
@@ -583,7 +584,7 @@ export function configureWebSocketServices(
                     value: connectionTimeInMinutes,
                     tenantId: connection.tenantId,
                     documentId: connection.documentId,
-                    clientId});
+                    clientId });
             }
             // Send notification messages for all client IDs in the room map
             const removeP: Promise<void>[] = [];
