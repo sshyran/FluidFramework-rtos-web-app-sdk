@@ -69,7 +69,7 @@ export class RedisThrottleStorageManager implements IThrottleStorageManager {
         return executeRedisMultiWithHmsetLpushExpire(
             this.client,
             throttlingKey,
-            throttlingMetric as { [key: string]: any },
+            throttlingMetric as { [key: string]: any; },
             usageKey,
             usageDataString,
             this.expireAfterSeconds);
@@ -103,7 +103,7 @@ export class RedisThrottleStorageManager implements IThrottleStorageManager {
         }
 
         // All values retrieved from Redis are strings, so they must be parsed
-        let throttlingMetric = {
+        const throttlingMetric = {
             count: Number.parseInt(throttlingMetricRedis.count, 10),
             lastCoolDownAt: Number.parseInt(throttlingMetricRedis.lastCoolDownAt, 10),
             throttleStatus: throttlingMetricRedis.throttleStatus === "true",

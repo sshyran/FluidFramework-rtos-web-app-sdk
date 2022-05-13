@@ -9,8 +9,8 @@ import { IThrottlingMetrics, IThrottleStorageManager, IUsageData } from "@fluidf
  * In-memory cache implementation of IThrottleManager for testing
  */
 export class TestThrottleStorageManager implements IThrottleStorageManager {
-    private readonly throttlingCache: { [key: string]: IThrottlingMetrics } = {};
-    private readonly usageCache: { [key: string]: IUsageData } = {};
+    private readonly throttlingCache: { [key: string]: IThrottlingMetrics; } = {};
+    private readonly usageCache: { [key: string]: IUsageData; } = {};
 
     async setThrottlingMetric(
         id: string,

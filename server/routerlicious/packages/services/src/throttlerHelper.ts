@@ -47,7 +47,7 @@ export class ThrottlerHelper implements IThrottlerHelper {
         if (retryAfterInMs > 0) {
             throttlingMetric.retryAfterInMs = retryAfterInMs;
             if (this.enableStoreUsageData) {
-                const usageData: IUsageData = { value: count } as IUsageData;
+                const usageData: IUsageData = { value: count };
                 Lumberjack.info(`Pushing usage data - id: ${id}, value: ${usageData.value}}`);
                 await this.throttleStorageManager.setThrottlingMetricAndUsageData(id, throttlingMetric, usageData);
             } else {
@@ -81,7 +81,7 @@ export class ThrottlerHelper implements IThrottlerHelper {
         }
 
         if (this.enableStoreUsageData) {
-            const usageData: IUsageData = { value: count } as IUsageData;
+            const usageData: IUsageData = { value: count };
             Lumberjack.info(`Pushing usage data - id: ${id}, value: ${usageData.value}}`);
             await this.throttleStorageManager.setThrottlingMetricAndUsageData(id, throttlingMetric, usageData);
         } else {
