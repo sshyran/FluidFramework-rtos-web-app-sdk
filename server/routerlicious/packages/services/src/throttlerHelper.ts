@@ -4,6 +4,7 @@
  */
 
 import {
+    IUsageData,
     IThrottlerHelper,
     IThrottlerResponse,
     IThrottleStorageManager,
