@@ -7,7 +7,7 @@ import {
     IUsageData,
     IThrottlerHelper,
     IThrottlerResponse,
-    IThrottleStorageManager,
+    IThrottleAndUsageStorageManager,
     IThrottlingMetrics,
 } from "@fluidframework/server-services-core";
 import { Lumberjack } from "@fluidframework/server-services-telemetry";
@@ -17,20 +17,21 @@ import { Lumberjack } from "@fluidframework/server-services-telemetry";
  */
 export class ThrottlerHelper implements IThrottlerHelper {
     constructor(
-        private readonly throttleStorageManager: IThrottleStorageManager,
+        private readonly throttleAndUsageStorageManager: IThrottleAndUsageStorageManager,
         private readonly rateInOperationsPerMs: number = 1000000,
         private readonly operationBurstLimit: number = 1000000,
         private readonly minCooldownIntervalInMs: number = 1000000,
-        private readonly enableStoreUsageData: boolean = false,
     ) {
     }
 
     public async updateCount(
         id: string,
         count: number,
+        usageStorageId?: string,
+        usageData?: IUsageData,
     ): Promise<IThrottlerResponse> {
         const now = Date.now();
-        let throttlingMetric = await this.throttleStorageManager.getThrottlingMetric(id);
+        let throttlingMetric = await this.throttleAndUsageStorageManager.getThrottlingMetric(id);
         if (!throttlingMetric) {
             // start a throttling metric with 1 operation burst limit's worth of tokens
             throttlingMetric = {
@@ -46,20 +47,12 @@ export class ThrottlerHelper implements IThrottlerHelper {
         const retryAfterInMs = this.getRetryAfterInMs(throttlingMetric, now);
         if (retryAfterInMs > 0) {
             throttlingMetric.retryAfterInMs = retryAfterInMs;
-            if (this.enableStoreUsageData) {
-                const usageData: IUsageData = {
-                    type: undefined,
-                    value: count,
-                    tenantId: undefined,
-                    documentId: undefined,
-                    clientId: undefined,
-                };
-                Lumberjack.info(`Pushing usage data - id: ${id}, value: ${usageData.value}}`);
-                await this.throttleStorageManager.setThrottlingMetricAndUsageData(id, throttlingMetric, usageData);
-            } else {
-                // update stored throttling metric with new retry duration
-                await this.throttleStorageManager.setThrottlingMetric(id, throttlingMetric);
-            }
+            await this.setThrottlingMetricAndUsageData(
+                id,
+                throttlingMetric,
+                count,
+                usageStorageId,
+                usageData);
             return this.getThrottlerResponseFromThrottlingMetrics(throttlingMetric);
         }
 
@@ -86,30 +79,41 @@ export class ThrottlerHelper implements IThrottlerHelper {
             throttlingMetric.retryAfterInMs = 0;
         }
 
-        if (this.enableStoreUsageData) {
-            const usageData: IUsageData = {
-                type: undefined,
-                value: count,
-                tenantId: undefined,
-                documentId: undefined,
-                clientId: undefined,
-            };
-            Lumberjack.info(`Pushing usage data - id: ${id}, value: ${usageData.value}}`);
-            await this.throttleStorageManager.setThrottlingMetricAndUsageData(id, throttlingMetric, usageData);
-        } else {
-            // update stored throttling metric
-            await this.throttleStorageManager.setThrottlingMetric(id, throttlingMetric);
-        }
+        await this.setThrottlingMetricAndUsageData(
+            id,
+            throttlingMetric,
+            count,
+            usageStorageId,
+            usageData);
 
         return this.getThrottlerResponseFromThrottlingMetrics(throttlingMetric);
     }
 
     public async getThrottleStatus(id: string): Promise<IThrottlerResponse | undefined> {
-        const throttlingMetric = await this.throttleStorageManager.getThrottlingMetric(id);
+        const throttlingMetric = await this.throttleAndUsageStorageManager.getThrottlingMetric(id);
         if (!throttlingMetric) {
             return undefined;
         }
         return this.getThrottlerResponseFromThrottlingMetrics(throttlingMetric);
+    }
+
+    private async setThrottlingMetricAndUsageData(
+        id: string,
+        throttlingMetric: IThrottlingMetrics,
+        count: number,
+        usageStorageId: string,
+        usageData: IUsageData) {
+        if (usageStorageId && usageData) {
+            Lumberjack.info(`Pushing usage data - id: ${usageStorageId}, value: ${usageData.value}}`, {
+                tenantId: usageData.tenantId,
+                documentId: usageData.documentId,
+                clientId: usageData.clientId,
+            });
+            await this.throttleAndUsageStorageManager.setThrottlingMetricAndUsageData(id, throttlingMetric, usageStorageId, usageData);
+        } else {
+            // update stored throttling metric
+            await this.throttleAndUsageStorageManager.setThrottlingMetric(id, throttlingMetric);
+        }
     }
 
     private getThrottlerResponseFromThrottlingMetrics(throttlingMetric: IThrottlingMetrics): IThrottlerResponse {

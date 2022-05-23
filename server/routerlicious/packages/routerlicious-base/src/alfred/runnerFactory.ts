@@ -96,7 +96,7 @@ export class AlfredResources implements core.IResources {
         public documentsCollectionName: string,
         public metricClientConfig: any,
         public documentsCollection: core.ICollection<core.IDocument>,
-        public throttleStorageManager?: core.IThrottleStorageManager,
+        public throttleStorageManager?: core.IThrottleAndUsageStorageManager,
     ) {
         const socketIoAdapterConfig = config.get("alfred:socketIoAdapter");
         const httpServerConfig: services.IHttpServerConfig = config.get("system:httpServer");
@@ -235,14 +235,13 @@ export class AlfredResourcesFactory implements core.IResourcesFactory<AlfredReso
             config.get("alfred:throttling:restCalls:minCooldownIntervalInMs") as number | undefined;
         const throttleMinRequestThrottleIntervalInMs =
             config.get("alfred:throttling:restCalls:minThrottleIntervalInMs") as number | undefined;
-        const throttleStorageManager =
-            new services.RedisThrottleStorageManager(redisClientForThrottling, redisParamsForThrottling);
+        const throttleAndUsageStorageManager =
+            new services.RedisThrottleAndUsageStorageManager(redisClientForThrottling, redisParamsForThrottling);
         const restThrottlerHelper = new services.ThrottlerHelper(
-            throttleStorageManager,
+            throttleAndUsageStorageManager,
             throttleMaxRequestsPerMs,
             throttleMaxRequestBurst,
-            throttleMinRequestCooldownIntervalInMs,
-            false);
+            throttleMinRequestCooldownIntervalInMs);
         const restThrottler = new services.Throttler(
             restThrottlerHelper,
             throttleMinRequestThrottleIntervalInMs,
@@ -258,12 +257,10 @@ export class AlfredResourcesFactory implements core.IResourcesFactory<AlfredReso
         const throttleMinSocketConnectionThrottleIntervalInMs =
             config.get("alfred:throttling:socketConnections:minThrottleIntervalInMs") as number | undefined;
         const socketConnectThrottlerHelper = new services.ThrottlerHelper(
-            throttleStorageManager,
+            throttleAndUsageStorageManager,
             throttleMaxSocketConnectionsPerMs,
             throttleMaxSocketConnectionBurst,
-            throttleMinSocketConnectionCooldownIntervalInMs,
-            false,
-        );
+            throttleMinSocketConnectionCooldownIntervalInMs);
         const socketConnectThrottler = new services.Throttler(
             socketConnectThrottlerHelper,
             throttleMinSocketConnectionThrottleIntervalInMs,
@@ -279,11 +276,10 @@ export class AlfredResourcesFactory implements core.IResourcesFactory<AlfredReso
         const throttleMinSubmitOpThrottleIntervalInMs =
             config.get("alfred:throttling:submitOps:minThrottleIntervalInMs") as number | undefined;
         const socketSubmitOpThrottlerHelper = new services.ThrottlerHelper(
-            throttleStorageManager,
+            throttleAndUsageStorageManager,
             throttleMaxSubmitOpsPerMs,
             throttleMaxSubmitOpBurst,
-            throttleMinSubmitOpCooldownIntervalInMs,
-            false);
+            throttleMinSubmitOpCooldownIntervalInMs);
         const socketSubmitOpThrottler = new services.Throttler(
             socketSubmitOpThrottlerHelper,
             throttleMinSubmitOpThrottleIntervalInMs,
@@ -299,11 +295,10 @@ export class AlfredResourcesFactory implements core.IResourcesFactory<AlfredReso
         const throttleMinSubmitSignalThrottleIntervalInMs =
             config.get("alfred:throttling:submitSignals:minThrottleIntervalInMs") as number | undefined;
         const socketSubmitSignalThrottlerHelper = new services.ThrottlerHelper(
-            throttleStorageManager,
+            throttleAndUsageStorageManager,
             throttleMaxSubmitSignalsPerMs,
             throttleMaxSubmitSignalBurst,
-            throttleMinSubmitSignalCooldownIntervalInMs,
-            true);
+            throttleMinSubmitSignalCooldownIntervalInMs);
         const socketSubmitSignalThrottler = new services.Throttler(
             socketSubmitSignalThrottlerHelper,
             throttleMinSubmitSignalThrottleIntervalInMs,

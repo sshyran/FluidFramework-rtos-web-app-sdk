@@ -79,9 +79,6 @@ const getSocketConnectThrottleId = (tenantId: string) => `${tenantId}_OpenSocket
 
 const getSubmitOpThrottleId = (clientId: string, tenantId: string) => `${clientId}_${tenantId}_SubmitOp`;
 
-const getConnectivityMinutesUsageId =
-    (clientId: string, tenantId: string) => `${clientId}_${tenantId}_ConnectivityMiniutes`;
-
 const getSubmitSignalThrottleId = (clientId: string, tenantId: string) => `${clientId}_${tenantId}_SubmitSignal`;
 
 // Sanitize the received op before sending.
@@ -137,19 +134,62 @@ function parseRelayUserAgent(relayUserAgent: string | undefined): Record<string,
 }
 
 /**
+ * Stores client connectivity time in a Redis list. 
+ */
+async function storeClientConnectivityTime(
+    clientId: string,
+    documentId: string,
+    tenantId: string,
+    connectionTimestamp: number,
+    throttleAndUsageStorageManager: core.IThrottleAndUsageStorageManager) {
+    try {
+        const now = Date.now();
+        const connectionTimeInMinutes = (now - connectionTimestamp) / 60000;
+        const storageId = core.clientConnectivityStorageId;
+        Lumberjack.info(
+            `Pushing usage data - id: ${storageId} value: ${connectionTimeInMinutes},
+                connectedAt: ${new Date(connectionTimestamp).toLocaleString()},
+                disconnectedAt: ${new Date(now).toLocaleString()}`, {
+                    [CommonProperties.clientId]: clientId,
+                    [BaseTelemetryProperties.tenantId]: tenantId,
+                    [BaseTelemetryProperties.documentId]: documentId,
+                },
+        );
+        const usageData = {
+            value: connectionTimeInMinutes,
+            tenantId: tenantId,
+            documentId: documentId,
+            clientId,
+            startTime: connectionTimestamp,
+            endTime: now,
+        };
+        await throttleAndUsageStorageManager.setUsageData(storageId, usageData);
+    } catch (error) {
+        Lumberjack.error(`ClientConnectivity data storage failed`, {
+            [CommonProperties.clientId]: clientId,
+            [BaseTelemetryProperties.tenantId]: tenantId,
+            [BaseTelemetryProperties.documentId]: documentId,
+        },
+        error);
+    }
+}
+
+/**
  * @returns ThrottlingError if throttled; undefined if not throttled or no throttler provided.
  */
-function checkThrottle(
+function checkThrottleAndUsage(
     throttler: core.IThrottler | undefined,
     throttleId: string,
     tenantId: string,
-    logger?: core.ILogger): core.ThrottlingError | undefined {
+    logger?: core.ILogger,
+    usageStorageId?: string,
+    usageData?: core.IUsageData): core.ThrottlingError | undefined {
     if (!throttler) {
         return;
     }
 
     try {
-        throttler.incrementCount(throttleId);
+        throttler.incrementCount(throttleId, 1, usageStorageId, usageData);
     } catch (error) {
         if (error instanceof core.ThrottlingError) {
             return error;
@@ -181,10 +221,12 @@ export function configureWebSocketServices(
     maxNumberOfClientsPerDocument: number = 1000000,
     maxTokenLifetimeSec: number = 60 * 60,
     isTokenExpiryEnabled: boolean = false,
+    isClientConnectivityCountingEnabled: boolean = false,
+    isSignalUsageCountingEnabled: boolean = false,
     connectThrottler?: core.IThrottler,
     submitOpThrottler?: core.IThrottler,
     submitSignalThrottler?: core.IThrottler,
-    throttleStorageManager?: core.IThrottleStorageManager) {
+    throttleAndUsageStorageManager?: core.IThrottleAndUsageStorageManager) {
     webSocketServer.on("connection", (socket: core.IWebSocket) => {
         // Map from client IDs on this connection to the object ID and user info.
         const connectionsMap = new Map<string, core.IOrdererConnection>();
@@ -223,7 +265,7 @@ export function configureWebSocketServices(
         }
 
         async function connectDocument(message: IConnect): Promise<IConnectedClient> {
-            const throttleError = checkThrottle(
+            const throttleError = checkThrottleAndUsage(
                 connectThrottler,
                 getSocketConnectThrottleId(message.tenantId),
                 message.tenantId,
@@ -473,7 +515,7 @@ export function configureWebSocketServices(
 
                     socket.emit("nack", "", [nackMessage]);
                 } else {
-                    const throttleError = checkThrottle(
+                    const throttleError = checkThrottleAndUsage(
                         submitOpThrottler,
                         getSubmitOpThrottleId(clientId, connection.tenantId),
                         connection.tenantId,
@@ -527,11 +569,26 @@ export function configureWebSocketServices(
                     const nackMessage = createNackMessage(400, NackErrorType.BadRequestError, "Nonexistent client");
                     socket.emit("nack", "", [nackMessage]);
                 } else {
-                    const throttleError = checkThrottle(
+                    let signalUsageData: IUsageData;
+                    if (isSignalUsageCountingEnabled) {
+                        // populate usageData with whatever data is available at this point.
+                        // The remaining fields will be populated down the stack. 
+                        signalUsageData = {
+                            value: undefined,
+                            tenantId: room.tenantId,
+                            documentId: room.documentId,
+                            clientId,
+                            startTime: undefined,
+                            endTime: undefined,
+                        };
+                    }
+                    const throttleError = checkThrottleAndUsage(
                         submitSignalThrottler,
                         getSubmitSignalThrottleId(clientId, room.tenantId),
                         room.tenantId,
-                        logger);
+                        logger,
+                        core.signalUsageStorageId,
+                        signalUsageData);
                     if (throttleError) {
                         const nackMessage = createNackMessage(
                             throttleError.code,
@@ -569,22 +626,16 @@ export function configureWebSocketServices(
                 );
                 // eslint-disable-next-line @typescript-eslint/no-floating-promises
                 connection.disconnect();
-                const now = Date.now();
-                const connectionTimestamp = connectionTimeMap.get(clientId) ?? now;
-                const connectionTimeInMinutes = (now - connectionTimestamp) / 60000;
-                const key = getConnectivityMinutesUsageId(clientId, connection.tenantId);
-                Lumberjack.info(
-                    `Pushing usage data - id: ${key} value: ${connectionTimeInMinutes}, clientId: ${clientId},
-                     connectedAt: ${new Date(connectionTimestamp).toLocaleString()},
-                     disconnectedAt: ${new Date(now).toLocaleString()}`,
-                     getLumberBaseProperties(connection.documentId, connection.tenantId),
-                );
-                await throttleStorageManager?.setUsageData(key, {
-                    type: core.MeterType.ClientConnectivityMinutes,
-                    value: connectionTimeInMinutes,
-                    tenantId: connection.tenantId,
-                    documentId: connection.documentId,
-                    clientId });
+                if (isClientConnectivityCountingEnabled && throttleAndUsageStorageManager) {
+                    // push client connectivity time to throttleAndUsageStorage.
+                    await storeClientConnectivityTime(
+                        clientId,
+                        connection.documentId,
+                        connection.tenantId,
+                        connectionTimeMap.get(clientId) ?? Date.now(),
+                        throttleAndUsageStorageManager,
+                    );
+                }
             }
             // Send notification messages for all client IDs in the room map
             const removeP: Promise<void>[] = [];

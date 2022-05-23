@@ -15,7 +15,7 @@ import {
     IRunner,
     ITenantManager,
     IThrottler,
-    IThrottleStorageManager,
+    IThrottleAndUsageStorageManager,
     IWebServer,
     IWebServerFactory,
     MongoManager,
@@ -50,7 +50,7 @@ export class AlfredRunner implements IRunner {
         private readonly producer: IProducer,
         private readonly metricClientConfig: any,
         private readonly documentsCollection: ICollection<IDocument>,
-        private readonly throttleStorageManager?: IThrottleStorageManager) {
+        private readonly throttleStorageManager?: IThrottleAndUsageStorageManager) {
     }
 
     // eslint-disable-next-line @typescript-eslint/promise-function-async
@@ -77,6 +77,8 @@ export class AlfredRunner implements IRunner {
         const maxNumberOfClientsPerDocument = this.config.get("alfred:maxNumberOfClientsPerDocument");
         const maxTokenLifetimeSec = this.config.get("auth:maxTokenLifetimeSec");
         const isTokenExpiryEnabled = this.config.get("auth:enableTokenExpiration");
+        const isClientConnectivityCountingEnabled = this.config.get("usage:clientConnectivityCountingEnabled");
+        const isSignalUsageCountingEnabled = this.config.get("usage:signalUsageCountingEnabled");
         // Register all the socket.io stuff
         configureWebSocketServices(
             this.server.webSocketServer,
@@ -89,6 +91,8 @@ export class AlfredRunner implements IRunner {
             maxNumberOfClientsPerDocument,
             maxTokenLifetimeSec,
             isTokenExpiryEnabled,
+            isClientConnectivityCountingEnabled,
+            isSignalUsageCountingEnabled,
             this.socketConnectThrottler,
             this.socketSubmitOpThrottler,
             this.socketSubmitSignalThrottler,

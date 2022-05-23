@@ -8,7 +8,7 @@ import { Redis } from "ioredis";
 import RedisMock from "ioredis-mock";
 import { IThrottlingMetrics } from "@fluidframework/server-services-core";
 import { TestEngine1, Lumberjack } from "@fluidframework/server-services-telemetry";
-import { RedisThrottleStorageManager } from "../redisThrottleStorageManager";
+import { RedisThrottleAndUsageStorageManager } from "../RedisThrottleAndUsageStorageManager";
 import Sinon from "sinon";
 
 const lumberjackEngine = new TestEngine1();
@@ -16,7 +16,7 @@ if (!Lumberjack.isSetupCompleted()) {
     Lumberjack.setup([lumberjackEngine]);
 }
 
-describe("RedisThrottleStorageManager", () => {
+describe("RedisThrottleAndUsageStorageManager", () => {
     let mockRedisClient: Redis;
     beforeEach(() => {
         // use fake timers to have full control over the passage of time
@@ -29,7 +29,7 @@ describe("RedisThrottleStorageManager", () => {
         Sinon.restore();
     });
     it("Creates and retrieves throttlingMetric", async () => {
-        const throttleManager = new RedisThrottleStorageManager(mockRedisClient);
+        const throttleManager = new RedisThrottleAndUsageStorageManager(mockRedisClient);
 
         const id = "test-id";
         const throttlingMetric: IThrottlingMetrics = {
@@ -46,7 +46,7 @@ describe("RedisThrottleStorageManager", () => {
     });
 
     it("Creates and overwrites throttlingMetric", async () => {
-        const throttleManager = new RedisThrottleStorageManager(mockRedisClient);
+        const throttleManager = new RedisThrottleAndUsageStorageManager(mockRedisClient);
 
         const id = "test-id";
         const originalThrottlingMetric: IThrottlingMetrics = {
@@ -74,7 +74,7 @@ describe("RedisThrottleStorageManager", () => {
     });
 
     it("Returns undefined when throttlingMetric does not exist", async () => {
-        const throttleManager = new RedisThrottleStorageManager(mockRedisClient);
+        const throttleManager = new RedisThrottleAndUsageStorageManager(mockRedisClient);
 
         const id = "test-id";
 
@@ -84,7 +84,7 @@ describe("RedisThrottleStorageManager", () => {
 
     it("Expires outdated values", async () => {
         const ttlInSeconds = 10;
-        const throttleManager = new RedisThrottleStorageManager(mockRedisClient, { expireAfterSeconds: ttlInSeconds });
+        const throttleManager = new RedisThrottleAndUsageStorageManager(mockRedisClient, { expireAfterSeconds: ttlInSeconds });
 
         const id = "test-id";
         const originalThrottlingMetric: IThrottlingMetrics = {
@@ -109,7 +109,7 @@ describe("RedisThrottleStorageManager", () => {
 
     it("Updates expiration on overwrite, then expires outdated values", async () => {
         const ttlInSeconds = 10;
-        const throttleManager = new RedisThrottleStorageManager(mockRedisClient, { expireAfterSeconds: ttlInSeconds });
+        const throttleManager = new RedisThrottleAndUsageStorageManager(mockRedisClient, { expireAfterSeconds: ttlInSeconds });
 
         const id = "test-id";
         const originalThrottlingMetric: IThrottlingMetrics = {

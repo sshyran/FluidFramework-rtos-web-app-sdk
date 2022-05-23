@@ -3,12 +3,12 @@
  * Licensed under the MIT License.
  */
 
-import { IThrottlingMetrics, IThrottleStorageManager, IUsageData } from "@fluidframework/server-services-core";
+import { IThrottlingMetrics, IThrottleAndUsageStorageManager, IUsageData } from "@fluidframework/server-services-core";
 
 /**
  * In-memory cache implementation of IThrottleManager for testing
  */
-export class TestThrottleStorageManager implements IThrottleStorageManager {
+export class TestThrottleStorageManager implements IThrottleAndUsageStorageManager {
     private readonly throttlingCache: { [key: string]: IThrottlingMetrics; } = {};
     private readonly usageCache: { [key: string]: IUsageData; } = {};
 

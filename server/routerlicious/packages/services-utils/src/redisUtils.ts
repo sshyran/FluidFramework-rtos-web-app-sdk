@@ -49,7 +49,7 @@ export const executeRedisMultiWithHmsetExpire = async (
         .catch((error) => { reject(error); });
 });
 
-export const executeRedisMultiWithHmsetLpushExpire = async (
+export const executeRedisMultiWithHmsetExpireAndLpush = async (
     client: Redis,
     hKey: string,
     hData: { [key: string]: any; },
@@ -60,7 +60,6 @@ export const executeRedisMultiWithHmsetLpushExpire = async (
         .hmset(hKey, hData)
         .expire(hKey, expireAfterSeconds)
         .lpush(lKey, lData)
-        .expire(lKey, expireAfterSeconds)
         .exec()
         .then((results) => {
             // results` is an array of responses corresponding to the sequence of queued commands.
@@ -90,51 +89,6 @@ export const executeRedisMultiWithHmsetLpushExpire = async (
             // LPUSH should return the length of the list indicating success. Otherwise, we had an error.
             if (results[2][1] <= 0) {
                 reject(new Error(`Redis LPUSH returned unexpected response: ${results[2][1]}`));
-                return;
-            }
-
-            // EXPIRE should return the number 1 indicating success. Otherwise, we had an error.
-            if (results[3][1] !== 1) {
-                reject(new Error(`Redis EXPIRE returned unexpected response: ${results[3][1]}`));
-                return;
-            }
-
-            resolve();
-        })
-        .catch((error) => { reject(error); });
-});
-
-export const executeRedisMultiWithLpushExpire = async (
-    client: Redis,
-    lKey: string,
-    lData: string,
-    expireAfterSeconds: number): Promise<void> => new Promise<void>((resolve, reject) => {
-        client.multi()
-        .lpush(lKey, lData)
-        .expire(lKey, expireAfterSeconds)
-        .exec()
-        .then((results) => {
-            // results` is an array of responses corresponding to the sequence of queued commands.
-            // In other words, it is [Error | null, any][].
-            // Each response follows the format `[err, result]`. `err` refers to runtime errors.
-
-            // Check if any queued command had an error
-            for (const result of results) {
-                if (result[0] && result[0] instanceof Error) {
-                    reject(result[0]);
-                    return;
-                }
-            }
-
-            // LPUSH should return the length of the list indicating success. Otherwise, we had an error.
-            if (results[0][1] <= 0) {
-                reject(new Error(`Redis LPUSH returned unexpected response: ${results[0][1]}`));
-                return;
-            }
-
-            // EXPIRE should return the number 1 indicating success. Otherwise, we had an error.
-            if (results[1][1] !== 1) {
-                reject(new Error(`Redis EXPIRE returned unexpected response: ${results[1][1]}`));
                 return;
             }
 
