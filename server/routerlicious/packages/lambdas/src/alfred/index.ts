@@ -84,7 +84,7 @@ const getSubmitSignalThrottleId = (clientId: string, tenantId: string) => `${cli
 // Sanitize the received op before sending.
 function sanitizeMessage(message: any): IDocumentMessage {
     // Trace sampling.
-    if (message.operation && message.operation.traces && getRandomInt(100) === 0) {
+    if (message.operation?.traces && getRandomInt(100) === 0) {
         message.operation.traces.push(
             {
                 action: "start",
