@@ -56,7 +56,7 @@ export interface IThrottleAndUsageStorageManager {
         throttlingMetric: IThrottlingMetrics,
         usageStorageId: string,
         usageData: IUsageData): Promise<void>;
-    
+
     /**
      * Store usage data for given id.
      */
@@ -76,7 +76,11 @@ export interface IThrottlerHelper {
      * Updates throttling metric count for given id, runs rate-limiting algorithm, and updates throttle status.
      * Optionally, stores usage data if provided with.
      */
-    updateCount(id: string, count: number, usageStorageId?: string, usageData?: IUsageData): Promise<IThrottlerResponse>;
+    updateCount(
+        id: string,
+        count: number,
+        usageStorageId?: string,
+        usageData?: IUsageData): Promise<IThrottlerResponse>;
 
     /**
      * Retrieve most recent throttle status for given id.
