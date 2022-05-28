@@ -103,7 +103,11 @@ export class ThrottlerHelper implements IThrottlerHelper {
         usageStorageId: string,
         usageData: IUsageData) {
         if (usageStorageId && usageData) {
-            await this.throttleAndUsageStorageManager.setThrottlingMetricAndUsageData(id, throttlingMetric, usageStorageId, usageData);
+            await this.throttleAndUsageStorageManager.setThrottlingMetricAndUsageData(
+                id,
+                throttlingMetric,
+                usageStorageId,
+                usageData);
         } else {
             // update stored throttling metric
             await this.throttleAndUsageStorageManager.setThrottlingMetric(id, throttlingMetric);

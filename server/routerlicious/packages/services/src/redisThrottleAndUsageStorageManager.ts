@@ -101,7 +101,7 @@ export class RedisThrottleAndUsageStorageManager implements IThrottleAndUsageSto
             [BaseTelemetryProperties.documentId]: usageData.documentId,
             [CommonProperties.clientId]: usageData.clientId,
         });
-        this.client.lpush(id, usageDataString);
+        await this.client.lpush(id, usageDataString);
     }
 
     public async getUsageData(id: string): Promise<IUsageData> {
