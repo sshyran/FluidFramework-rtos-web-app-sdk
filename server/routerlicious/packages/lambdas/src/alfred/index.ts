@@ -146,15 +146,6 @@ async function storeClientConnectivityTime(
         const now = Date.now();
         const connectionTimeInMinutes = (now - connectionTimestamp) / 60000;
         const storageId = core.clientConnectivityStorageId;
-        Lumberjack.info(
-            `Pushing usage data - id: ${storageId} value: ${connectionTimeInMinutes},
-                connectedAt: ${new Date(connectionTimestamp).toLocaleString()},
-                disconnectedAt: ${new Date(now).toLocaleString()}`, {
-                    [CommonProperties.clientId]: clientId,
-                    [BaseTelemetryProperties.tenantId]: tenantId,
-                    [BaseTelemetryProperties.documentId]: documentId,
-                },
-        );
         const usageData = {
             value: connectionTimeInMinutes,
             tenantId: tenantId,
@@ -569,26 +560,21 @@ export function configureWebSocketServices(
                     const nackMessage = createNackMessage(400, NackErrorType.BadRequestError, "Nonexistent client");
                     socket.emit("nack", "", [nackMessage]);
                 } else {
-                    let signalUsageData: IUsageData;
-                    if (isSignalUsageCountingEnabled) {
-                        // populate usageData with whatever data is available at this point.
-                        // The remaining fields will be populated down the stack. 
-                        signalUsageData = {
-                            value: undefined,
-                            tenantId: room.tenantId,
-                            documentId: room.documentId,
-                            clientId,
-                            startTime: undefined,
-                            endTime: undefined,
-                        };
-                    }
+                    let signalUsageData: core.IUsageData = {
+                        value: 0,
+                        tenantId: room.tenantId,
+                        documentId: room.documentId,
+                        clientId,
+                        startTime: 0,
+                        endTime: 0,
+                    };
                     const throttleError = checkThrottleAndUsage(
                         submitSignalThrottler,
                         getSubmitSignalThrottleId(clientId, room.tenantId),
                         room.tenantId,
                         logger,
-                        core.signalUsageStorageId,
-                        signalUsageData);
+                        isSignalUsageCountingEnabled ? core.signalUsageStorageId : undefined,
+                        isSignalUsageCountingEnabled ? signalUsageData : undefined);
                     if (throttleError) {
                         const nackMessage = createNackMessage(
                             throttleError.code,

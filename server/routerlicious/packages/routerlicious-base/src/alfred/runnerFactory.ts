@@ -372,7 +372,7 @@ export class AlfredResourcesFactory implements core.IResourcesFactory<AlfredReso
             documentsCollectionName,
             metricClientConfig,
             documentsCollection,
-            throttleStorageManager);
+            throttleAndUsageStorageManager);
     }
 }
 

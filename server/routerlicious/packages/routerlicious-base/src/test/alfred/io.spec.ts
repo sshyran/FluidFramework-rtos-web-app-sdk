@@ -118,8 +118,12 @@ describe("Routerlicious", () => {
                         undefined,
                         undefined,
                         false,
+                        false,
+                        false,
                         testConnectionThrottler,
-                        testSubmitOpThrottler);
+                        testSubmitOpThrottler,
+                        undefined,
+                        undefined);
                 });
 
                 function connectToServer(

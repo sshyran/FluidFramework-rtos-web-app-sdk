@@ -10,7 +10,6 @@ import {
     IThrottleAndUsageStorageManager,
     IThrottlingMetrics,
 } from "@fluidframework/server-services-core";
-import { Lumberjack } from "@fluidframework/server-services-telemetry";
 
 /**
  * Implements the Token Bucket algorithm to calculate rate-limiting for throttling operations.
@@ -104,11 +103,6 @@ export class ThrottlerHelper implements IThrottlerHelper {
         usageStorageId: string,
         usageData: IUsageData) {
         if (usageStorageId && usageData) {
-            Lumberjack.info(`Pushing usage data - id: ${usageStorageId}, value: ${usageData.value}}`, {
-                tenantId: usageData.tenantId,
-                documentId: usageData.documentId,
-                clientId: usageData.clientId,
-            });
             await this.throttleAndUsageStorageManager.setThrottlingMetricAndUsageData(id, throttlingMetric, usageStorageId, usageData);
         } else {
             // update stored throttling metric

@@ -8,7 +8,7 @@ import { Redis } from "ioredis";
 import RedisMock from "ioredis-mock";
 import { IThrottlingMetrics } from "@fluidframework/server-services-core";
 import { TestEngine1, Lumberjack } from "@fluidframework/server-services-telemetry";
-import { RedisThrottleAndUsageStorageManager } from "../RedisThrottleAndUsageStorageManager";
+import { RedisThrottleAndUsageStorageManager } from "../redisThrottleAndUsageStorageManager";
 import Sinon from "sinon";
 
 const lumberjackEngine = new TestEngine1();

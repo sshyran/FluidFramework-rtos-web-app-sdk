@@ -26,9 +26,10 @@ export class TestThrottleStorageManager implements IThrottleAndUsageStorageManag
     async setThrottlingMetricAndUsageData(
         id: string,
         throttleMetric: IThrottlingMetrics,
+        usageStorageId: string,
         usageData: IUsageData): Promise<void> {
             this.throttlingCache[id] = throttleMetric;
-            this.usageCache[id] = usageData;
+            this.usageCache[usageStorageId] = usageData;
     }
 
     async setUsageData(id: string, usageData: IUsageData): Promise<void> {

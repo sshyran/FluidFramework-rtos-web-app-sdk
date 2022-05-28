@@ -13,7 +13,7 @@ import { executeRedisMultiWithHmsetExpire,
          IRedisParameters } from "@fluidframework/server-services-utils";
 import { Redis } from "ioredis";
 import * as winston from "winston";
-import { CommonProperties, Lumberjack } from "@fluidframework/server-services-telemetry";
+import { BaseTelemetryProperties, CommonProperties, Lumberjack } from "@fluidframework/server-services-telemetry";
 
 /**
  * Manages storage of throttling metrics and usage data in redis.
@@ -63,6 +63,11 @@ export class RedisThrottleAndUsageStorageManager implements IThrottleAndUsageSto
     ): Promise<void> {
         const throttlingKey = this.getKey(throttlingId);
         const usageDataString = JSON.stringify(usageData);
+        Lumberjack.info(`Pushing usage data - id: ${usageStorageId}, data: ${usageDataString}}`, {
+            [BaseTelemetryProperties.tenantId]: usageData.tenantId,
+            [BaseTelemetryProperties.documentId]: usageData.documentId,
+            [CommonProperties.clientId]: usageData.clientId,
+        });
 
         return executeRedisMultiWithHmsetExpireAndLpush(
             this.client,
@@ -91,7 +96,12 @@ export class RedisThrottleAndUsageStorageManager implements IThrottleAndUsageSto
 
     public async setUsageData(id: string, usageData: IUsageData): Promise<void> {
         const usageDataString = JSON.stringify(usageData);
-        return this.client.lpush(id, usageDataString);
+        Lumberjack.info(`Pushing usage data - id: ${id}, data: ${usageDataString}}`, {
+            [BaseTelemetryProperties.tenantId]: usageData.tenantId,
+            [BaseTelemetryProperties.documentId]: usageData.documentId,
+            [CommonProperties.clientId]: usageData.clientId,
+        });
+        this.client.lpush(id, usageDataString);
     }
 
     public async getUsageData(id: string): Promise<IUsageData> {
