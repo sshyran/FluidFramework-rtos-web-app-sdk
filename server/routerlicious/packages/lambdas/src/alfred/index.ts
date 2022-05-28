@@ -134,7 +134,7 @@ function parseRelayUserAgent(relayUserAgent: string | undefined): Record<string,
 }
 
 /**
- * Stores client connectivity time in a Redis list. 
+ * Stores client connectivity time in a Redis list.
  */
 async function storeClientConnectivityTime(
     clientId: string,
@@ -148,8 +148,8 @@ async function storeClientConnectivityTime(
         const storageId = core.clientConnectivityStorageId;
         const usageData = {
             value: connectionTimeInMinutes,
-            tenantId: tenantId,
-            documentId: documentId,
+            tenantId,
+            documentId,
             clientId,
             startTime: connectionTimestamp,
             endTime: now,
@@ -560,7 +560,7 @@ export function configureWebSocketServices(
                     const nackMessage = createNackMessage(400, NackErrorType.BadRequestError, "Nonexistent client");
                     socket.emit("nack", "", [nackMessage]);
                 } else {
-                    let signalUsageData: core.IUsageData = {
+                    const signalUsageData: core.IUsageData = {
                         value: 0,
                         tenantId: room.tenantId,
                         documentId: room.documentId,
