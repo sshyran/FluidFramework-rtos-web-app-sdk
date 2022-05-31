@@ -7,8 +7,9 @@ export interface IUsageData {
     tenantId: string;
     documentId: string;
     clientId: string;
-    startTime: number;
-    endTime: number;
+    startTime?: number;
+    endTime?: number;
+    opType?: string;
 }
 
 export const signalUsageStorageId: string = "signalUsage";

@@ -554,6 +554,7 @@ export function configureWebSocketServices(
         socket.on(
             "submitSignal",
             (clientId: string, contentBatches: (IDocumentMessage | IDocumentMessage[])[]) => {
+                Lumberjack.info(`Received signal from ${clientId}`);
                 // Verify the user has subscription to the room.
                 const room = roomMap.get(clientId);
                 if (!room) {
@@ -565,9 +566,8 @@ export function configureWebSocketServices(
                         tenantId: room.tenantId,
                         documentId: room.documentId,
                         clientId,
-                        startTime: 0,
-                        endTime: 0,
                     };
+                    Lumberjack.info(`submitSignal isSignalUsageCountingEnabled: ${isSignalUsageCountingEnabled}, submitSignalThrottler is null: ${!submitSignalThrottler}`);
                     const throttleError = checkThrottleAndUsage(
                         submitSignalThrottler,
                         getSubmitSignalThrottleId(clientId, room.tenantId),
