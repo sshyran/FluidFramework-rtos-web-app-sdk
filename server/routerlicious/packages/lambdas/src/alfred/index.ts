@@ -567,7 +567,8 @@ export function configureWebSocketServices(
                         documentId: room.documentId,
                         clientId,
                     };
-                    Lumberjack.info(`submitSignal isSignalUsageCountingEnabled: ${isSignalUsageCountingEnabled}, submitSignalThrottler is null: ${!submitSignalThrottler}`);
+                    Lumberjack.info(`submitSignal isSignalUsageCountingEnabled: ${isSignalUsageCountingEnabled},
+                    submitSignalThrottler is null: ${!submitSignalThrottler}`);
                     const throttleError = checkThrottleAndUsage(
                         submitSignalThrottler,
                         getSubmitSignalThrottleId(clientId, room.tenantId),
