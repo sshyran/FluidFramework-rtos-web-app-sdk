@@ -10,6 +10,7 @@ import {
     IThrottleAndUsageStorageManager,
     IThrottlingMetrics,
 } from "@fluidframework/server-services-core";
+import { Lumberjack } from "@fluidframework/server-services-telemetry";
 
 /**
  * Implements the Token Bucket algorithm to calculate rate-limiting for throttling operations.
@@ -49,7 +50,6 @@ export class ThrottlerHelper implements IThrottlerHelper {
             await this.setThrottlingMetricAndUsageData(
                 id,
                 throttlingMetric,
-                count,
                 usageStorageId,
                 usageData);
             return this.getThrottlerResponseFromThrottlingMetrics(throttlingMetric);
@@ -77,11 +77,9 @@ export class ThrottlerHelper implements IThrottlerHelper {
             throttlingMetric.throttleReason = "";
             throttlingMetric.retryAfterInMs = 0;
         }
-
         await this.setThrottlingMetricAndUsageData(
             id,
             throttlingMetric,
-            count,
             usageStorageId,
             usageData);
 
@@ -99,10 +97,10 @@ export class ThrottlerHelper implements IThrottlerHelper {
     private async setThrottlingMetricAndUsageData(
         id: string,
         throttlingMetric: IThrottlingMetrics,
-        count: number,
         usageStorageId: string,
         usageData: IUsageData) {
         if (usageStorageId && usageData) {
+            Lumberjack.info(`Signal count, throttlerHelper: ${usageData.value}, usageStorageId: ${usageStorageId}`);
             await this.throttleAndUsageStorageManager.setThrottlingMetricAndUsageData(
                 id,
                 throttlingMetric,
