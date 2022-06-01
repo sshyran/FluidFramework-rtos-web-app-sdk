@@ -128,7 +128,8 @@ export class Throttler implements IThrottler {
                 usageData.endTime = now;
             }
             if (id.includes("_SubmitSignal")) {
-                Lumberjack.info(`Signal count, throttler invoked: ${usageData.value}, usageStorageId: ${usageStorageId}`);
+                Lumberjack.info(`Signal count, throttler invoked: ${usageData.value},
+                 usageStorageId: ${usageStorageId}`);
             }
             await this.throttlerHelper.updateCount(id, countDelta, usageStorageId, usageData)
                 .then((throttlerResponse) => {
