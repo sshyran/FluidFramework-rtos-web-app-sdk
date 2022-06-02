@@ -8,7 +8,7 @@ import { IThrottlingMetrics, IThrottleAndUsageStorageManager, IUsageData } from 
 /**
  * In-memory cache implementation of IThrottleManager for testing
  */
-export class TestThrottleStorageManager implements IThrottleAndUsageStorageManager {
+export class TestThrottleAndUsageStorageManager implements IThrottleAndUsageStorageManager {
     private readonly throttlingCache: { [key: string]: IThrottlingMetrics; } = {};
     private readonly usageCache: { [key: string]: IUsageData; } = {};
 

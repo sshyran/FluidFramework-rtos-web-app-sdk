@@ -92,9 +92,6 @@ export class Throttler implements IThrottler {
 
     private updateCountDelta(id: string, value: number): void {
         const currentValue = this.countDeltaMap.get(id) || 0;
-        if (id.includes("_SubmitSignal")) {
-            Lumberjack.info(`Signal count in memory: ${currentValue}`);
-        }
         this.countDeltaMap.set(id, currentValue + value);
     }
 
@@ -126,10 +123,6 @@ export class Throttler implements IThrottler {
                 usageData.value = countDelta;
                 usageData.startTime = lastThrottleUpdateTime;
                 usageData.endTime = now;
-            }
-            if (id.includes("_SubmitSignal")) {
-                Lumberjack.info(`Signal count, throttler invoked: ${usageData.value},
-                 usageStorageId: ${usageStorageId}`);
             }
             await this.throttlerHelper.updateCount(id, countDelta, usageStorageId, usageData)
                 .then((throttlerResponse) => {

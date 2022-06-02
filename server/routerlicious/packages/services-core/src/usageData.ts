@@ -6,7 +6,7 @@ export interface IUsageData {
     value: number;
     tenantId: string;
     documentId: string;
-    clientId: string;
+    clientId?: string;
     startTime?: number;
     endTime?: number;
     opType?: string;

@@ -302,7 +302,6 @@ export function configureWebSocketServices(
             }
 
             const connectedTimestamp = Date.now();
-            connectionTimeMap.set(clientId, connectedTimestamp);
 
             // Todo: should all the client details come from the claims???
             // we are still trusting the users permissions and type here.
@@ -311,9 +310,13 @@ export function configureWebSocketServices(
             messageClient.user = claims.user;
             messageClient.scopes = claims.scopes;
 
-            // Do not give SummaryWrite scope to clients that are not summarizers
+            // 1. Do not give SummaryWrite scope to clients that are not summarizers.
+            // 2. Store connection timestamp for all clients but the summarizer.
+            // Connection timestamp is used (inside socket disconnect event) to
+            // calculate the client connection time (i.e. for billing). 
             if (!isSummarizer) {
                 messageClient.scopes = claims.scopes.filter((scope) => scope !== ScopeType.SummaryWrite);
+                connectionTimeMap.set(clientId, connectedTimestamp);
             }
 
             // back-compat: remove cast to any once new definition of IClient comes through.
@@ -554,7 +557,6 @@ export function configureWebSocketServices(
         socket.on(
             "submitSignal",
             (clientId: string, contentBatches: (IDocumentMessage | IDocumentMessage[])[]) => {
-                Lumberjack.info(`Received signal from ${clientId}`);
                 // Verify the user has subscription to the room.
                 const room = roomMap.get(clientId);
                 if (!room) {
@@ -567,8 +569,6 @@ export function configureWebSocketServices(
                         documentId: room.documentId,
                         clientId,
                     };
-                    Lumberjack.info(`submitSignal isSignalUsageCountingEnabled: ${isSignalUsageCountingEnabled},
-                    submitSignalThrottler is null: ${!submitSignalThrottler}`);
                     const throttleError = checkThrottleAndUsage(
                         submitSignalThrottler,
                         getSubmitSignalThrottleId(clientId, room.tenantId),
@@ -614,14 +614,16 @@ export function configureWebSocketServices(
                 // eslint-disable-next-line @typescript-eslint/no-floating-promises
                 connection.disconnect();
                 if (isClientConnectivityCountingEnabled && throttleAndUsageStorageManager) {
-                    // push client connectivity time to throttleAndUsageStorage.
-                    await storeClientConnectivityTime(
-                        clientId,
-                        connection.documentId,
-                        connection.tenantId,
-                        connectionTimeMap.get(clientId) ?? Date.now(),
-                        throttleAndUsageStorageManager,
-                    );
+                    const connectionTimestamp = connectionTimeMap.get(clientId);
+                    if (connectionTimestamp) {
+                        await storeClientConnectivityTime(
+                            clientId,
+                            connection.documentId,
+                            connection.tenantId,
+                            connectionTimestamp,
+                            throttleAndUsageStorageManager,
+                        );
+                    }
                 }
             }
             // Send notification messages for all client IDs in the room map
