@@ -18,6 +18,7 @@ import {
     INack,
     INackContent,
     NackErrorType,
+    IClient,
 } from "@fluidframework/protocol-definitions";
 import { KafkaOrdererFactory } from "@fluidframework/server-kafka-orderer";
 import { LocalWebSocket, LocalWebSocketServer } from "@fluidframework/server-local-server";
@@ -404,13 +405,24 @@ describe("Routerlicious", () => {
                 function connectToServer(
                     id: string,
                     tenantId: string,
+                    clientType: string,
                     secret: string,
                     socket: LocalWebSocket): Promise<IConnected> {
                     const scopes = [ScopeType.DocRead, ScopeType.DocWrite, ScopeType.SummaryWrite];
                     const token = generateToken(tenantId, id, secret, scopes);
 
+                    const client: IClient = {
+                        mode: undefined,
+                        permission: undefined,
+                        user: undefined,
+                        scopes: undefined,
+                        details: {
+                            capabilities: undefined,
+                            type: clientType,
+                        }
+                    };
                     const connectMessage: IConnect = {
-                        client: undefined,
+                        client: client,
                         id,
                         mode: "write",
                         tenantId,
@@ -446,12 +458,23 @@ describe("Routerlicious", () => {
 
                     return deferred.promise;
                 }
-                
+
                 describe("connection time", () => {
+                    it("Should not store the summarizer client connection time upon disconnect", async () => {
+                        const clientConnectionTime = 100;
+                        const socket = webSocketServer.createConnection();
+                        await connectToServer(testId, testTenantId, "summarizer", testSecret, socket);
+                        Sinon.clock.tick(clientConnectionTime);
+                        socket.send("disconnect");
+
+                        const usageData = await testThrottleAndUsageStorageManager.getUsageData(clientConnectivityStorageId);
+                        assert.equal(usageData, undefined);
+                    });
+
                     it("Should store the client connection time upon disconnect", async () => {
                         const clientConnectionTime = 100;
                         const socket = webSocketServer.createConnection();
-                        const connectMessage = await connectToServer(testId, testTenantId, testSecret, socket);
+                        const connectMessage = await connectToServer(testId, testTenantId, "client", testSecret, socket);
                         Sinon.clock.tick(clientConnectionTime);
                         socket.send("disconnect");
 
@@ -466,7 +489,7 @@ describe("Routerlicious", () => {
                 describe("signal count", () => {
                     it("Should store the signal count when throttler is invoked", async () => {
                         const socket = webSocketServer.createConnection();
-                        const connectMessage = await connectToServer(testId, testTenantId, testSecret, socket);
+                        const connectMessage = await connectToServer(testId, testTenantId, "client", testSecret, socket);
 
                         let i = 0;
                         const signalCount = 10;
