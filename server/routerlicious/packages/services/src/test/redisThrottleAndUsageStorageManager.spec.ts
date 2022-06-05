@@ -6,7 +6,7 @@
 import assert from "assert";
 import { Redis } from "ioredis";
 import RedisMock from "ioredis-mock";
-import { IThrottlingMetrics } from "@fluidframework/server-services-core";
+import { IThrottlingMetrics, IUsageData } from "@fluidframework/server-services-core";
 import { TestEngine1, Lumberjack } from "@fluidframework/server-services-telemetry";
 import { RedisThrottleAndUsageStorageManager } from "../redisThrottleAndUsageStorageManager";
 import Sinon from "sinon";
@@ -142,5 +142,50 @@ describe("RedisThrottleAndUsageStorageManager", () => {
         Sinon.clock.tick(1);
         retrievedThrottlingMetric = await throttleManager.getThrottlingMetric(id);
         assert.strictEqual(retrievedThrottlingMetric, undefined);
+    });
+
+    it("Creates and retrieves throttlingMetric and usageData", async () => {
+        const throttleManager = new RedisThrottleAndUsageStorageManager(mockRedisClient);
+
+        const id = "test-id";
+        const throttlingMetric: IThrottlingMetrics = {
+            count: 2,
+            lastCoolDownAt: Date.now(),
+            throttleStatus: false,
+            throttleReason: "N/A",
+            retryAfterInMs: 2500,
+        };
+
+        const storageId = "usage-storage-id";
+        const usageData: IUsageData = {
+            value: 1,
+            tenantId: "testTenant",
+            documentId: "testDocument",
+        };
+
+        await throttleManager.setThrottlingMetricAndUsageData(
+            id,
+            throttlingMetric,
+            storageId,
+            usageData);
+        const retrievedThrottlingMetric = await throttleManager.getThrottlingMetric(id);
+        assert.deepStrictEqual(retrievedThrottlingMetric, throttlingMetric);
+        const retrievedUsageData = await throttleManager.getUsageData(storageId);
+        assert.deepStrictEqual(retrievedUsageData, usageData);
+    });
+
+    it("Creates and retrieves usageData", async () => {
+        const throttleManager = new RedisThrottleAndUsageStorageManager(mockRedisClient);
+
+        const storageId = "usage-storage-id";
+        const usageData: IUsageData = {
+            value: 1,
+            tenantId: "testTenant",
+            documentId: "testDocument",
+        };
+
+        await throttleManager.setUsageData(storageId, usageData);
+        const retrievedUsageData = await throttleManager.getUsageData(storageId);
+        assert.deepStrictEqual(retrievedUsageData, usageData);
     });
 });

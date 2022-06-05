@@ -313,7 +313,7 @@ export function configureWebSocketServices(
             // 1. Do not give SummaryWrite scope to clients that are not summarizers.
             // 2. Store connection timestamp for all clients but the summarizer.
             // Connection timestamp is used (inside socket disconnect event) to
-            // calculate the client connection time (i.e. for billing). 
+            // calculate the client connection time (i.e. for billing).
             if (!isSummarizer) {
                 messageClient.scopes = claims.scopes.filter((scope) => scope !== ScopeType.SummaryWrite);
                 connectionTimeMap.set(clientId, connectedTimestamp);
