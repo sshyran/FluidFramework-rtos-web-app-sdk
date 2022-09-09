@@ -368,6 +368,9 @@ export class SummaryWriter implements ISummaryWriter {
                 return false;
             }
 
+            Lumberjack.info(`Protocol head of last client summary: ${currentProtocolHead}`, this.lumberProperties);
+            Lumberjack.info(`Seq number of op that triggered summary: ${op.sequenceNumber}`, this.lumberProperties);
+
             // Generate a tree of logTail starting from the last protocol state.
             const logTailEntries = await requestWithRetry(
                 async () => this.generateLogtailEntries(
@@ -507,6 +510,8 @@ export class SummaryWriter implements ISummaryWriter {
         to: number,
         pending: ISequencedOperationMessage[]): Promise<ITreeEntry[]> {
         const logTail = await this.getLogTail(from, to, pending);
+        Lumberjack.info(`From ${from}, To ${to}, Pending: ${pending}`, this.lumberProperties);
+        Lumberjack.info(`Generated logtail: ${JSON.stringify(logTail)}`, this.lumberProperties);
         const logTailEntries: ITreeEntry[] = [
             {
                 mode: FileMode.File,
