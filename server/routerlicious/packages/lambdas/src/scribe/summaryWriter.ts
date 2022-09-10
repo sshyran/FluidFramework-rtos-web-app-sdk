@@ -42,7 +42,7 @@ import {
     Lumberjack,
 } from "@fluidframework/server-services-telemetry";
 import safeStringify from "json-stringify-safe";
-import { ISummaryWriteResponse, ISummaryWriter } from "./interfaces";
+import { ISummaryWriteResponse, ISummaryWriter, ILatestSummaryState } from "./interfaces";
 
 /**
  * Git specific implementation of ISummaryWriter
@@ -56,6 +56,7 @@ export class SummaryWriter implements ISummaryWriter {
         private readonly opStorage: ICollection<ISequencedOperationMessage>,
         private readonly enableWholeSummaryUpload: boolean,
         private readonly maxRetriesOnError: number = 6,
+        private readonly latestsummary?: ILatestSummaryState,
     ) {
         this.lumberProperties = getLumberBaseProperties(this.documentId, this.tenantId);
     }
@@ -179,7 +180,7 @@ export class SummaryWriter implements ISummaryWriter {
 
             // Generate a tree of logTail starting from protocol sequence number to summarySequenceNumber
             const logTailEntries = await requestWithRetry(
-                async () => this.generateLogtailEntries(checkpoint.protocolState.sequenceNumber, op.sequenceNumber + 1, pendingOps),
+                async () => this.generateLogtailEntries(checkpoint.protocolState.sequenceNumber, op.sequenceNumber + 1, pendingOps, this.latestsummary),
                 "writeClientSummary_generateLogtailEntries",
                 this.lumberProperties,
                 shouldRetryNetworkError,
@@ -376,7 +377,8 @@ export class SummaryWriter implements ISummaryWriter {
                 async () => this.generateLogtailEntries(
                     currentProtocolHead,
                     op.sequenceNumber + 1,
-                    pendingOps),
+                    pendingOps,
+                    this.latestsummary),
                 "writeServiceSummary_generateLogtailEntries",
                 this.lumberProperties,
                 shouldRetryNetworkError,
@@ -508,9 +510,20 @@ export class SummaryWriter implements ISummaryWriter {
     private async generateLogtailEntries(
         from: number,
         to: number,
-        pending: ISequencedOperationMessage[]): Promise<ITreeEntry[]> {
+        pending: ISequencedOperationMessage[],
+        lastsummary: ILatestSummaryState | undefined): Promise<ITreeEntry[]> {
+        let opsFromPreviousSummary: ISequencedDocumentMessage[] | undefined = [];
         const logTail = await this.getLogTail(from, to, pending);
-        Lumberjack.info(`From ${from}, To ${to}, Pending: ${pending}`, this.lumberProperties);
+        if (logTail.length > 0 && from < logTail[0].sequenceNumber - 1) {
+            const firstSeqNoInLogTail = logTail[0].sequenceNumber;
+            opsFromPreviousSummary = lastsummary?.messages.filter((op) =>
+                op.sequenceNumber > from && op.sequenceNumber < firstSeqNoInLogTail);
+        }
+
+        const fullLogtail = opsFromPreviousSummary?.concat(logTail);
+
+        Lumberjack.info(`opMessageFromPreviousLogtail: ${JSON.stringify(opsFromPreviousSummary)}`);
+        Lumberjack.info(`From ${from}, To ${to}, Pending: ${JSON.stringify(pending)}`, this.lumberProperties);
         Lumberjack.info(`Generated logtail: ${JSON.stringify(logTail)}`, this.lumberProperties);
         const logTailEntries: ITreeEntry[] = [
             {
@@ -518,7 +531,7 @@ export class SummaryWriter implements ISummaryWriter {
                 path: "logTail",
                 type: TreeEntry.Blob,
                 value: {
-                    contents: JSON.stringify(logTail),
+                    contents: JSON.stringify(fullLogtail),
                     encoding: "utf-8",
                 },
             },
