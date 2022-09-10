@@ -25,7 +25,7 @@ import {
 } from "@fluidframework/server-services-core";
 import { IDocumentSystemMessage, ISequencedDocumentMessage, MessageType } from "@fluidframework/protocol-definitions";
 import { IGitManager } from "@fluidframework/server-services-client";
-import { LumberEventName } from "@fluidframework/server-services-telemetry";
+import { getLumberBaseProperties, LumberEventName, Lumberjack } from "@fluidframework/server-services-telemetry";
 import { NoOpLambda, createSessionMetric, isDocumentValid, isDocumentSessionValid } from "../utils";
 import { CheckpointManager } from "./checkpointManager";
 import { ScribeLambda } from "./lambda";
@@ -88,6 +88,11 @@ export class ScribeLambdaFactory extends EventEmitter implements IPartitionLambd
                 summaryReader.readLastSummary(),
                 this.documentCollection.findOne({ documentId, tenantId }),
             ]);
+
+            Lumberjack.info(`last summary: ${JSON.stringify(latestSummary)}`,
+                getLumberBaseProperties(documentId, tenantId));
+            Lumberjack.info(`ops in summary: ${JSON.stringify(latestSummary.messages)}`,
+                getLumberBaseProperties(documentId, tenantId));
 
             if (!isDocumentValid(document)) {
                 // Document sessions can be joined (via Alfred) after a document is functionally deleted.
@@ -176,13 +181,15 @@ export class ScribeLambdaFactory extends EventEmitter implements IPartitionLambd
         }
 
         const protocolHandler = initializeProtocol(lastCheckpoint.protocolState, latestSummary.term);
+        const lastSummaryMessages = latestSummary.messages;
 
         const summaryWriter = new SummaryWriter(
             tenantId,
             documentId,
             gitManager,
             this.messageCollection,
-            this.enableWholeSummaryUpload);
+            this.enableWholeSummaryUpload,
+            lastSummaryMessages);
         const checkpointManager = new CheckpointManager(
             context,
             tenantId,

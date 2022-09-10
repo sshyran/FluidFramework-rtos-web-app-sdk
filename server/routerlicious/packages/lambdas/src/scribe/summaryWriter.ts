@@ -55,6 +55,7 @@ export class SummaryWriter implements ISummaryWriter {
         private readonly summaryStorage: IGitManager,
         private readonly opStorage: ICollection<ISequencedOperationMessage>,
         private readonly enableWholeSummaryUpload: boolean,
+        private readonly lastSummaryMessages: ISequencedDocumentMessage[],
         private readonly maxRetriesOnError: number = 6,
     ) {
         this.lumberProperties = getLumberBaseProperties(this.documentId, this.tenantId);
@@ -179,11 +180,16 @@ export class SummaryWriter implements ISummaryWriter {
 
             // Generate a tree of logTail starting from protocol sequence number to summarySequenceNumber
             const logTailEntries = await requestWithRetry(
-                async () => this.generateLogtailEntries(checkpoint.protocolState.sequenceNumber, op.sequenceNumber + 1, pendingOps),
+                async () => this.generateLogtailEntries(checkpoint.protocolState.sequenceNumber, op.sequenceNumber + 1, pendingOps, this.lastSummaryMessages),
                 "writeClientSummary_generateLogtailEntries",
                 this.lumberProperties,
                 shouldRetryNetworkError,
                 this.maxRetriesOnError);
+
+            Lumberjack.info(`WriteClientSummary Protocol head of last client summary: ${checkpoint.protocolState.sequenceNumber}`,
+                this.lumberProperties);
+            Lumberjack.info(`WriteClientSummary Seq number of op that triggered summary: ${op.sequenceNumber}`,
+                this.lumberProperties);
 
             // Create service protocol entries combining scribe and deli states.
             const serviceProtocolEntries = generateServiceProtocolEntries(
@@ -373,11 +379,17 @@ export class SummaryWriter implements ISummaryWriter {
                 async () => this.generateLogtailEntries(
                     currentProtocolHead,
                     op.sequenceNumber + 1,
-                    pendingOps),
+                    pendingOps,
+                    this.lastSummaryMessages),
                 "writeServiceSummary_generateLogtailEntries",
                 this.lumberProperties,
                 shouldRetryNetworkError,
                 this.maxRetriesOnError);
+
+            Lumberjack.info(`WriteServiceSummary Protocol head of last client summary: ${currentProtocolHead}`,
+                this.lumberProperties);
+            Lumberjack.info(`WriteServiceSummary Seq number of op that triggered summary: ${op.sequenceNumber}`,
+                this.lumberProperties);
 
             // Create service protocol entries combining scribe and deli states.
             const serviceProtocolEntries = generateServiceProtocolEntries(
@@ -505,20 +517,46 @@ export class SummaryWriter implements ISummaryWriter {
     private async generateLogtailEntries(
         from: number,
         to: number,
-        pending: ISequencedOperationMessage[]): Promise<ITreeEntry[]> {
+        pending: ISequencedOperationMessage[],
+        lastSummaryMessages: ISequencedDocumentMessage[] | undefined): Promise<ITreeEntry[]> {
         const logTail = await this.getLogTail(from, to, pending);
+        let lastSummaryOps: ISequencedDocumentMessage[] = [];
+        if (logTail && from < logTail[0].sequenceNumber - 1 && lastSummaryMessages) {
+            Lumberjack.info(`Fetching the missing ops from the last summary`);
+            lastSummaryOps = await this.getSummaryOps(from, logTail[0].sequenceNumber, lastSummaryMessages);
+        }
+        const fullLogTail = lastSummaryOps.concat(logTail);
+
+        Lumberjack.info(`opMessageFromPreviousLogtail: ${JSON.stringify(lastSummaryOps)}`);
+        Lumberjack.info(`From ${from}, To ${to}, Pending: ${JSON.stringify(pending)}`, this.lumberProperties);
+        Lumberjack.info(`Generated logtail: ${JSON.stringify(logTail)}`, this.lumberProperties);
+        Lumberjack.info(`Generated fullLogTail: ${JSON.stringify(fullLogTail)}`, this.lumberProperties);
+
         const logTailEntries: ITreeEntry[] = [
             {
                 mode: FileMode.File,
                 path: "logTail",
                 type: TreeEntry.Blob,
                 value: {
-                    contents: JSON.stringify(logTail),
+                    contents: JSON.stringify(fullLogTail),
                     encoding: "utf-8",
                 },
             },
         ];
         return logTailEntries;
+    }
+
+    private async getSummaryOps(
+        gt: number,
+        lt: number,
+        lastSummaryMessages: ISequencedDocumentMessage[]): Promise<ISequencedDocumentMessage[]> {
+        if (lt - gt <= 1) {
+            return [];
+        } else {
+            return lastSummaryMessages?.filter((ms) =>
+                ms.sequenceNumber > gt &&
+                ms.sequenceNumber < lt);
+        }
     }
 
     private async getLogTail(
