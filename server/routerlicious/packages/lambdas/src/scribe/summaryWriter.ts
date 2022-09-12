@@ -536,9 +536,9 @@ export class SummaryWriter implements ISummaryWriter {
         //     logTailAfterSummaryOps = await this.getLogTail(logTail[0].sequenceNumber - 1, to, pending);
         // }
         // const fullLogTail = !isMissingSummaryOps ? logTail : lastSummaryOps.concat(logTailAfterSummaryOps);
-        // Lumberjack.info(`opMessageFromPreviousLogtail: ${JSON.stringify(lastSummaryOps)}`, this.lumberProperties);
 
         Lumberjack.info(`From ${from}, To ${to}, Pending: ${JSON.stringify(pending)}`, this.lumberProperties);
+        Lumberjack.info(`missingOps: ${JSON.stringify(missingOps)}`, this.lumberProperties);
         Lumberjack.info(`Generated logtail: ${JSON.stringify(logTail)}`, this.lumberProperties);
         Lumberjack.info(`Generated fullLogTail: ${JSON.stringify(fullLogTail)}`, this.lumberProperties);
 
