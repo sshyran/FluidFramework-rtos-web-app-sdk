@@ -528,6 +528,22 @@ export class SummaryWriter implements ISummaryWriter {
             (missingOps.concat(logTail)).sort((op1, op2) => op1.sequenceNumber - op2.sequenceNumber) :
             logTail;
 
+        // Check the missing operations in the fullLogTail
+        if (fullLogTail.length !== (to - from - 1)) {
+            const missingOpsSequenceNumbers: number[] = [];
+            const fullLogTailSequenceNumbers = fullLogTail.map((ms) => ms.sequenceNumber);
+            let j = 0;
+            for (let i = from + 1; i < to; i++) {
+                if (i === fullLogTailSequenceNumbers[j]) {
+                    j++;
+                    continue;
+                }
+                missingOpsSequenceNumbers.push(i);
+            }
+            Lumberjack.error(`Missing ops in the fullLogTail: ${JSON.stringify(missingOpsSequenceNumbers)}`
+                , this.lumberProperties);
+        }
+
         // To remove
         Lumberjack.info(`From ${from}, To ${to}, Pending: ${JSON.stringify(pending)}`, this.lumberProperties);
         Lumberjack.info(`missingOps: ${JSON.stringify(missingOps)}`, this.lumberProperties);
@@ -555,9 +571,8 @@ export class SummaryWriter implements ISummaryWriter {
         lastSummaryMessages: ISequencedDocumentMessage[] | undefined):
         Promise<ISequencedDocumentMessage[] | undefined> {
         if (lt - gt <= 1) {
-            return [];
+            return undefined;
         }
-        Lumberjack.info(`Fetching the missing ops from the last summary`, this.lumberProperties);
         const logtailSequenceNumbers = logTail.map((ms) => ms.sequenceNumber);
         const missingOps = lastSummaryMessages?.filter((ms) =>
             !(logtailSequenceNumbers.includes(ms.sequenceNumber)));
