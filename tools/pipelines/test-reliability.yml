@@ -266,10 +266,16 @@ stages:
               displayName: Start Test
             # Install
             ## Not sure if it is necessary
+            - checkout: self
+              clean: true
+              lfs: false
+              submodules: false
+
             - task: UseNode@1
               displayName: Use Node 14.x
               inputs:
                 version: 14.x
+
             - task: Npm@1
               displayName: npm ci
               inputs:
