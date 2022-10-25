@@ -8,6 +8,100 @@ name: $(Build.BuildId)
 trigger: none
 pr: none
 
+parameters:
+- name: poolBuild
+  type: object
+  default: Small
+
+- name: stageNames
+  type: object
+  default:
+  - Test 1
+  - Test 2
+  - Test 3
+  - Test 4
+  - Test 5
+  - Test 6
+  - Test 7
+  - Test 8
+  - Test 9
+  - Test 10
+
+- name: buildDirectory
+  type: string
+  default: .
+
+- name: taskBuild
+  type: string
+  default: ci:build
+
+- name: taskBuildDocs
+  type: boolean
+  default: false
+
+- name: taskLint
+  type: boolean
+  default: false
+
+- name: taskTest
+  type: object
+  default:
+  - ci:test:mocha
+  - ci:test:jest
+  - ci:test:realsvc:local
+  - ci:test:realsvc:tinylicious
+  - ci:test:stress:tinylicious
+  - test:copyresults
+
+- name: checkoutSubmodules
+  type: boolean
+  default: false
+
+- name: namespace
+  type: boolean
+  default: true
+
+- name: buildNumberInPatch
+  type: string
+  default:
+
+- name: publishOverride
+  displayName: Publish Override (default = based on branch)
+  type: string
+  default: default
+  values:
+    - default
+    - skip
+    - force
+
+- name: buildToolsVersionToInstall
+  displayName: Fluid build tools version (default = installs version in repo)
+  type: string
+  default: repo
+
+- name: nonScopedPackages
+  displayName: Non-scoped packages to publish
+  type: object
+  default:
+  - fluid-framework
+
+- name: releaseBuildOverride
+  displayName: Release Build (default = not released)
+  type: string
+  default: none
+  values:
+    - none
+    - prerelease
+    - release
+
+- name: tagName
+  type: string
+  default: client
+
+- name: includeInternalVersions
+  type: boolean
+  default: false
+
 schedules:
   - cron: "00 03 * * SUN"
     displayName: Scheduled Tests on Saturday Nights Weekly
@@ -19,34 +113,147 @@ schedules:
 
 variables:
 - group: prague-key-vault
-- name: testWorkspace
-  value: $(Pipeline.Workspace)/test
+  # We use 'chalk' to colorize output, which auto-detects color support in the
+  # running terminal.  The log output shown in Azure DevOps job runs only has
+  # basic ANSI color support though, so force that in the pipeline
+- name: FORCE_COLOR
+  value: 1
+- template: include-vars.yml
+  parameters:
+    publishOverride: ${{ parameters.publishOverride }}
+    releaseBuildOverride: ${{ parameters.releaseBuildOverride }}
+    buildNumberInPatch: ${{ parameters.buildNumberInPatch }}
+    nonScopedPackages: ${{ parameters.nonScopedPackages }}
+
 
 stages:
+  - stage: Build
+    displayName: Build Stage
+    jobs:
+      # Job - Build
+      - job: build
+        displayName: Build
+        pool: ${{ parameters.poolBuild }}
+        variables:
+          testCoverage: ${{ ne(variables['Build.Reason'], 'PullRequest') }}
+          releaseBuildVar: $[variables.releaseBuild]
+        steps:
+        # Setup
+        - checkout: self
+          clean: true
+          lfs: ${{ parameters.checkoutSubmodules }}
+          submodules: ${{ parameters.checkoutSubmodules }}
+        # Install
+        - task: UseNode@1
+          displayName: Use Node 14.x
+          inputs:
+            version: 14.x
+        - task: Npm@1
+          displayName: npm ci
+          inputs:
+            command: 'custom'
+            workingDir: ${{ parameters.buildDirectory }}
+            customCommand: 'ci --unsafe-perm'
+            customRegistry: 'useNpmrc'
+
+        # Set version
+        - template: include-set-package-version.yml
+          parameters:
+            buildDirectory: ${{ parameters.buildDirectory }}
+            buildNumberInPatch: ${{ parameters.buildNumberInPatch }}
+            buildToolsVersionToInstall: ${{ parameters.buildToolsVersionToInstall }}
+            tagName: ${{ parameters.tagName }}
+
+        # Build
+        - ${{ if ne(parameters.taskBuild, 'false') }}:
+          - task: Npm@1
+            displayName: npm run ${{ parameters.taskBuild }}
+            inputs:
+              command: 'custom'
+              workingDir: ${{ parameters.buildDirectory }}
+              customCommand: 'run ${{ parameters.taskBuild }}'
+
+        # Lint
+        - ${{ if ne(parameters.taskLint, false) }}:
+          - task: Npm@1
+            displayName: npm run lint
+            inputs:
+              command: 'custom'
+              workingDir: ${{ parameters.buildDirectory }}
+              customCommand: 'run lint'
+
+        # Pre-test
+        - ${{ if ne(convertToJson(parameters.taskTest), '[]') }}:
+          # Set variable startTest if the build succeed so that we can run all the test tasks whether they are failed or not
+          - script: |
+              echo "##vso[task.setvariable variable=startTest]true"
+            displayName: Start Test
+
   - ${{ each stageName in parameters.stageNames }}:
     - stage:
       displayName: ${{ stageName }}
       dependsOn: []
       jobs:
-      - template: templates/include-test-reliability.yml
-        parameters:
-          testPackage: "@fluid-internal/local-server-tests"
-          testWorkspace: ${{ variables.testWorkspace }}
-          testCommand: test:mocha
-          env:
-            FLUID_TEST_LOGGER_PKG_PATH: ${{ variables.testWorkspace }}/node_modules/@ff-internal/aria-logger # Contains getTestLogger impl to inject
+        - job: Test and Publish Results
+          displayNmae: Test
+          steps:
+            # Test - With coverage
+            - ${{ if and(eq(variables['testCoverage'], true), startsWith(taskTestStep, 'ci:test')) }}:
+              - task: Npm@1
+                displayName: npm run ${{ taskTestStep }}:coverage
+                inputs:
+                  command: 'custom'
+                  workingDir: ${{ parameters.buildDirectory }}
+                  customCommand: 'run ${{ taskTestStep }}:coverage'
+                condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
+            # Test - No coverage
+            - ${{ if or(eq(variables['testCoverage'], false), eq(startsWith(taskTestStep, 'ci:test'), false)) }}:
+                - task: Npm@1
+                  displayName: npm run ${{ taskTestStep }}
+                  inputs:
+                    command: 'custom'
+                    workingDir: ${{ parameters.buildDirectory }}
+                    customCommand: 'run ${{ taskTestStep }}'
+                  condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
 
-parameters:
-  - name: stageNames
-    type: object
-    default:
-    - Run 1
-    - Run 2
-    - Run 3
-    - Run 4
-    - Run 5
-    - Run 6
-    - Run 7
-    - Run 8
-    - Run 9
-    - Run 10
+            # Test - Upload coverage results
+            # Some webpacked file using externals introduce file name with quotes in them
+            # and Istanbul's cobertura reporter doesn't escape them causing parse error when we publish
+            # A quick fix to patch the file with sed. (See https://github.com/bcoe/c8/issues/302)
+            - ${{ if eq(variables['testCoverage'], true) }}:
+              - task: Bash@3
+                displayName: 'Check for nyc/report directory'
+                inputs:
+                  targetType: 'inline'
+                  workingDirectory: ${{ parameters.buildDirectory }}
+                  script: |
+                    test -d nyc/report && echo '##vso[task.setvariable variable=ReportDirExists;]true' || echo 'No nyc/report directory'
+                condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
+              - task: Bash@3
+                displayName: Patch Coverage Results
+                inputs:
+                  targetType: 'inline'
+                  workingDirectory: ${{ parameters.buildDirectory }}/nyc/report
+                  script: |
+                    sed -e 's/\(filename=\".*[\\/]external .*\)"\(.*\)""/\1\&quot;\2\&quot;"/' cobertura-coverage.xml > cobertura-coverage-patched.xml
+                condition: and(succeededOrFailed(), eq(variables['ReportDirExists'], 'true'))
+              - task: PublishCodeCoverageResults@1
+                displayName: Publish Code Coverage
+                inputs:
+                  codeCoverageTool: Cobertura
+                  summaryFileLocation: ${{ parameters.buildDirectory }}/nyc/report/cobertura-coverage-patched.xml
+                  reportDirectory: ${{ parameters.buildDirectory }}/nyc/report
+                  failIfCoverageEmpty: true
+                condition: and(succeededOrFailed(), eq(variables['ReportDirExists'], 'true'))
+
+            # Test - Upload results
+            - task: PublishTestResults@2
+              displayName: Publish Test Results
+              inputs:
+                testResultsFormat: 'JUnit'
+                testResultsFiles: '**/*junit-report.xml'
+                searchFolder: ${{ parameters.buildDirectory }}/nyc
+                mergeTestResults: false
+              condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
+
+
