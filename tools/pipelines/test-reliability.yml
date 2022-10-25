@@ -264,6 +264,20 @@ stages:
             - script: |
                 echo "##vso[task.setvariable variable=startTest]true"
               displayName: Start Test
+            # Install
+            ## Not sure if it is necessary
+            - task: UseNode@1
+              displayName: Use Node 14.x
+              inputs:
+                version: 14.x
+            - task: Npm@1
+              displayName: npm ci
+              inputs:
+                command: 'custom'
+                workingDir: ${{ parameters.buildDirectory }}
+                customCommand: 'ci --unsafe-perm'
+                customRegistry: 'useNpmrc'
+
             - ${{ each taskTestStep in parameters.taskTest }}:
               # Test - With coverage
               - ${{ if eq(startsWith(taskTestStep, 'ci:test'), true) }}:
