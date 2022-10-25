@@ -63,7 +63,7 @@ parameters:
 
 - name: buildNumberInPatch
   type: string
-  default:
+  default: false
 
 - name: publishOverride
   displayName: Publish Override (default = based on branch)
@@ -118,7 +118,7 @@ variables:
   # basic ANSI color support though, so force that in the pipeline
 - name: FORCE_COLOR
   value: 1
-- template: include-vars.yml
+- template: templates/include-vars.yml
   parameters:
     publishOverride: ${{ parameters.publishOverride }}
     releaseBuildOverride: ${{ parameters.releaseBuildOverride }}
@@ -157,7 +157,7 @@ stages:
             customRegistry: 'useNpmrc'
 
         # Set version
-        - template: include-set-package-version.yml
+        - template: templates/include-set-package-version.yml
           parameters:
             buildDirectory: ${{ parameters.buildDirectory }}
             buildNumberInPatch: ${{ parameters.buildNumberInPatch }}
