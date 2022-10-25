@@ -189,7 +189,7 @@ stages:
       displayName: ${{ stageName }}
       dependsOn: []
       jobs:
-        - job: Test and Publish Results
+        - job: Test
           displayName: Test
           steps:
           # Test
