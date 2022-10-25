@@ -50,7 +50,7 @@ parameters:
 
 - name: checkoutSubmodules
   type: boolean
-  default: false
+  default: true
 
 - name: namespace
   type: boolean
