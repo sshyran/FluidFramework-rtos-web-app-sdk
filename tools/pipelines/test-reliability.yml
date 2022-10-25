@@ -257,6 +257,7 @@ stages:
       jobs:
         - job: Test
           displayName: Test
+          pool: ${{ parameters.poolBuild }}
           steps:
           # Test
           - ${{ if ne(convertToJson(parameters.taskTest), '[]') }}:
@@ -266,23 +267,23 @@ stages:
               displayName: Start Test
             # Install
             ## Not sure if it is necessary
-            - checkout: self
-              clean: true
-              lfs: false
-              submodules: false
+            # - checkout: self
+            #  clean: true
+            #  lfs: false
+            #  submodules: false
 
-            - task: UseNode@1
-              displayName: Use Node 14.x
-              inputs:
-                version: 14.x
+            # - task: UseNode@1
+            #  displayName: Use Node 14.x
+            #  inputs:
+            #    version: 14.x
 
-            - task: Npm@1
-              displayName: npm ci
-              inputs:
-                command: 'custom'
-                workingDir: ${{ parameters.buildDirectory }}
-                customCommand: 'ci --unsafe-perm'
-                customRegistry: 'useNpmrc'
+            # - task: Npm@1
+            #  displayName: npm ci
+            #  inputs:
+            #   command: 'custom'
+            #    workingDir: ${{ parameters.buildDirectory }}
+            #    customCommand: 'ci --unsafe-perm'
+            #    customRegistry: 'useNpmrc'
 
             - ${{ each taskTestStep in parameters.taskTest }}:
               # Test - With coverage
