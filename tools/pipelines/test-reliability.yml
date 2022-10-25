@@ -187,7 +187,7 @@ stages:
   - ${{ each stageName in parameters.stageNames }}:
     - stage:
       displayName: ${{ stageName }}
-      dependsOn: []
+      dependsOn: Build
       jobs:
         - job: Test
           displayName: Test
@@ -200,7 +200,7 @@ stages:
               displayName: Start Test
             - ${{ each taskTestStep in parameters.taskTest }}:
               # Test - With coverage
-              - ${{ if and(eq(variables['testCoverage'], true), startsWith(taskTestStep, 'ci:test')) }}:
+              - ${{ if eq(startsWith(taskTestStep, 'ci:test'), true) }}:
                 - task: Npm@1
                   displayName: npm run ${{ taskTestStep }}:coverage
                   inputs:
@@ -209,7 +209,7 @@ stages:
                     customCommand: 'run ${{ taskTestStep }}:coverage'
                   condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
               # Test - No coverage
-              - ${{ if or(eq(variables['testCoverage'], false), eq(startsWith(taskTestStep, 'ci:test'), false)) }}:
+              - ${{ if eq(startsWith(taskTestStep, 'ci:test'), false) }}:
                   - task: Npm@1
                     displayName: npm run ${{ taskTestStep }}
                     inputs:
