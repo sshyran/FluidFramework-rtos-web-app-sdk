@@ -267,10 +267,10 @@ stages:
               displayName: Start Test
             # Install
             ## Not sure if it is necessary
-            - checkout: none
-              # clean: true
-              # lfs: false
-              # submodules: false
+            - checkout: self
+              clean: true
+              lfs: false
+              submodules: false
 
             - task: UseNode@1
               displayName: Use Node 14.x
