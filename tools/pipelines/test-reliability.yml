@@ -176,7 +176,7 @@ stages:
                 release=$(release)"
               
               # Assign target branch
-              if [[ "${{ variables['Build.Reason'] }}" == "PullRequest"]]; then
+              if [[ ${{ variables['Build.Reason'] }} == "PullRequest" ]]; then
                 echo "targetBranchName = $(System.PullRequest.TargetBranch)"
               fi
 
