@@ -280,7 +280,7 @@ stages:
             - task: Npm@1
               displayName: npm ci
               inputs:
-               command: 'custom'
+                command: 'custom'
                 workingDir: ${{ parameters.buildDirectory }}
                 customCommand: 'ci --unsafe-perm'
                 customRegistry: 'useNpmrc'
