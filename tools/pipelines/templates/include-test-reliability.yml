@@ -1,246 +1,264 @@
 # Copyright (c) Microsoft Corporation and contributors. All rights reserved.
 # Licensed under the MIT License.
 
-# include-test-coverage
+# build-npm-package template to build NPM packages/projects
+
 parameters:
-- name: poolBuild
-  type: object
-  default: Large
+- name: buildDirectory
+  type: string
 
 - name: taskBuild
   type: string
   default: ci:build
 
-- name: testPackage
-  type: string
-  default: "@fluid-internal/local-server-tests"
+- name: taskBuildDocs
+  type: boolean
+  default: true
 
-- name: testWorkspace
-  type: string
+- name: taskLint
+  type: boolean
+  default: true
 
-- name: timeoutInMinutes
-  type: number
-  default: 60
-
-- name: env
+- name: taskTest
   type: object
+  default:
+  - ci:test
 
-- name: testCommand
-  type: string
-  default: test:coverage
+- name: poolCG
+  type: object
+  default: Small
 
-- name: continueOnError
+- name: poolBuild
+  type: object
+  default: Large
+
+- name: checkoutSubmodules
   type: boolean
   default: false
 
-- name: testFileTarName
+- name: buildNumberInPatch
   type: string
-  default: null
-
-- name: splitTestVariants
-  type: object
   default:
-  - name: ""
-    flags: ""
+
+- name: nonScopedPackages
+  type: object
+  default: []
+
+- name: publishOverride
+  type: string
+
+- name: releaseBuildOverride
+  type: string
+
+- name: tagName
+  type: string
+
+- name: buildToolsVersionToInstall
+  type: string
+  default: repo
+
+trigger: none
+
+variables:
+  # We use 'chalk' to colorize output, which auto-detects color support in the
+  # running terminal.  The log output shown in Azure DevOps job runs only has
+  # basic ANSI color support though, so force that in the pipeline
+  - name: FORCE_COLOR
+    value: 1
+  - template: include-vars.yml
+    parameters:
+      publishOverride: ${{ parameters.publishOverride }}
+      releaseBuildOverride: ${{ parameters.releaseBuildOverride }}
+      buildNumberInPatch: ${{ parameters.buildNumberInPatch }}
+      nonScopedPackages: ${{ parameters.nonScopedPackages }}
 
 jobs:
-  - ${{ each variant in parameters.splitTestVariants }}:
-    - job: build
-      displayName: Run Test Coverage
-      pool: ${{ parameters.poolBuild }}
-      timeoutInMinutes: ${{ parameters.timeoutInMinutes }}
-      variables:
-      # We use 'chalk' to colorize output, which auto-detects color support in the
-      # running terminal.  The log output shown in Azure DevOps job runs only has
-      # basic ANSI color support though, so force that in the pipeline
-      - name: FORCE_COLOR
-        value: 1
-      - name: testPackageDir
-        value: '${{ parameters.testWorkspace }}/node_modules/${{ parameters.testPackage }}'
-      - name: testPackageFilePattern
-        value: ${{ replace(replace(parameters.testPackage, '@', '' ), '/', '-') }}-*.tgz
-      - name: testPackagePathPattern
-        value: $(Pipeline.Workspace)/client/pack/scoped/${{ variables.testPackageFilePattern }}
-      - name: skipComponentGovernanceDetection
-        value: true
-      - name: artifactPipeline
-        value: Build - client packages
-      - name: buildDirectory
-        value: "."
-      - ${{ if startsWith(variables['Build.SourceBranch'], 'refs/heads/test/') }}:
-        - name: feed
-          value: https://pkgs.dev.azure.com/fluidframework/internal/_packaging/internal/npm/registry/
-      - ${{ if not(startsWith(variables['Build.SourceBranch'], 'refs/heads/test/')) }}:
-        - name: feed
-          value: https://pkgs.dev.azure.com/fluidframework/internal/_packaging/build/npm/registry/
+  # Job - Build
+  - job: build
+    displayName: Build
+    pool: ${{ parameters.poolBuild }}
+    variables:
+      testCoverage: ${{ ne(variables['Build.Reason'], 'PullRequest') }}
+      releaseBuildVar: $[variables.releaseBuild]
+    steps:
+    # Setup
+    - checkout: self
+      clean: true
+      lfs: ${{ parameters.checkoutSubmodules }}
+      submodules: ${{ parameters.checkoutSubmodules }}
 
-      steps:
-        # Setup
-        - checkout: self
-          clean: true
+    - task: Bash@3
+      displayName: Parameters
+      inputs:
+        targetType: 'inline'
+        workingDirectory: ${{ parameters.buildDirectory }}
+        script: |
+          # Show all task group conditions
 
-        # Print parameters/Vars
-        - task: Bash@3
-          displayName: Print Parameters and Variables
-          inputs:
-            targetType: 'inline'
-            script: |
-              # Show all task group conditions
+          echo "
+          Pipeline Variables:
+            releaseBuild=$(releaseBuildVar)
 
-              echo "
+          Override Parameters:
+            publishOverride=${{ parameters.publishOverride }}
+            releaseBuildOverride=${{ parameters.releaseBuildOverride }}
 
-              Task Variables:
-                testWorkspace=${{ parameters.testWorkspace }}
-                testPackageFilePattern=${{ variables.testPackageFilePattern }}
-                feed=${{ variables.feed }}
-                testCommand=${{ parameters.testCommand }}
-                testFileTarName=${{ parameters.testFileTarName }}
-                poolBuild=${{ parameters.poolBuild }}
-                testPackage=${{ parameters.testPackage }}
+          Tasks Parameters:
+            BuildDir=${{ parameters.buildDirectory }}
+            Build=${{ parameters.taskBuild }}
+            Lint=${{ parameters.taskLint }}
+            Test=${{ convertToJson(parameters.taskTest) }}
+            BuildDoc=${{ parameters.taskBuildDocs }}
+            TestCoverage=$(testCoverage)
 
-              Pipeline Parameters:
-                BuildDir=${{ variables.buildDirectory }}
-                Build=${{ parameters.taskBuild }}
+          Publish Parameters:
+            nonScopedPackages=${{ join(', ', parameters.nonScopedPackages) }}
 
-              SourceBranch=$(Build.SourceBranch)
-              "
+          Computed variables:
+            shouldPublish=${{ variables.shouldPublish }}
+            componentDetection=${{ variables.componentDetection }}
+            publish=${{ variables.publish }}
+            canRelease=${{ variables.canRelease }}
+            publishNonScopedPackages=${{ variables.publishNonScopedPackages }}
+            targetBranchName = $(System.PullRequest.TargetBranch)
 
-        # Install
-        - task: UseNode@1
-          displayName: Use Node 14.x
-          inputs:
-            version: 14.x
+            release=$(release)"
 
-        # Download artifact
-        - task: DownloadPipelineArtifact@2
-          displayName: Download test package
-          inputs:
-            source: specific
-            project: internal
-            pipeline: ${{ variables.artifactPipeline }}
-            preferTriggeringPipeline: true
-            allowPartiallySucceededBuilds: true
-            runVersion: latestFromBranch
-            runBranch: $(Build.SourceBranch)
-            artifact: pack
-            patterns: "**/${{ variables.testPackageFilePattern }}"
-            path: $(Pipeline.Workspace)/client/pack
+          # Error checking
+          if [[ "$(release)" == "release" ]]; then
+            if [[ "${{ variables.canRelease }}" == "False" ]]; then
+              echo "##vso[task.logissue type=error]Invalid branch ${{ variables['Build.SourceBranch'] }} for release"
+              exit -1;
+            fi
 
-        - task: Bash@3
-          displayName: Create test directory
-          inputs:
-            targetType: 'inline'
-            script: |
-              mkdir ${{ parameters.testWorkspace }}
+            if [ -f "lerna.json" ]; then
+              grep -e fluid.*[0-9]-[0-9] `find packages -name 'package.json'`
+            else
+              grep -e fluid.*[0-9]-[0-9] `find . -name 'package.json'`
+            fi
 
-        - task: Bash@3
-          name: Initialize
-          displayName: Initialize
-          inputs:
-            targetType: 'inline'
-            workingDirectory: ${{ parameters.testWorkspace }}
-            script: |
-              echo Initialize package
-              npm init --yes
+            if [[ $? == 0 ]]; then
+              echo "##vso[task.logissue type=error]Release shouldn't contain prerelease dependencies"
+              exit -1;
+            fi
+          fi
 
-              echo Generating .npmrc
-              echo "registry=https://registry.npmjs.org" >> ./.npmrc
-              echo "always-auth=false" >> ./.npmrc
+          if [[ "$(release)" == "prerelease" ]]; then
+            if [[ "${{ parameters.buildNumberInPatch }}" == "true" ]]; then
+              echo "##vso[task.logissue type=error] Prerelease not allow for builds that put build number as the patch version"
+              exit -1;
+            fi
+          fi
 
-              echo "@fluidframework:registry=${{ variables.feed }}" >> ./.npmrc
-              echo "@fluid-experimental:registry=${{ variables.feed }}" >> ./.npmrc
-              echo "@fluid-internal:registry=${{ variables.feed }}" >> ./.npmrc
-              echo "@ff-internal:registry=https://pkgs.dev.azure.com/fluidframework/internal/_packaging/build/npm/registry/" >> ./.npmrc
-              echo "@ms:registry=https://office.pkgs.visualstudio.com/_packaging/Office/npm/registry/" >> ./.npmrc
-              echo "always-auth=true" >> ./.npmrc
-              cat .npmrc
+          if [[ "$(release)" != "none" ]] && [[ "$(release)" != "" ]]; then
+            if [[ "${{ variables.publish }}" != "True" ]]; then
+              echo "##vso[task.logissue type=error]'$(release)'' is set but package is not published. Either the branch doesn't default to publish or it is skipped."
+              exit -1;
+            fi
+          fi
 
-              if [[ `ls -1 ${{ variables.testPackagePathPattern }} | wc -l` -eq 1 ]]; then
-                echo "##vso[task.setvariable variable=testPackageTgz;isOutput=true]`ls ${{ variables.testPackagePathPattern }}`"
-              else
-                ls -1 ${{ variables.testPackagePathPattern }}
-                echo "##vso[task.logissue type=error]Test package '${{ parameters.testPackage }}' not found, or there are more then one found"
-              fi
+    # Install
+    - task: UseNode@1
+      displayName: Use Node 14.x
+      inputs:
+        version: 14.x
+    - task: Npm@1
+      displayName: npm ci
+      inputs:
+        command: 'custom'
+        workingDir: ${{ parameters.buildDirectory }}
+        customCommand: 'ci --unsafe-perm'
+        customRegistry: 'useNpmrc'
 
-        # Auth to internal feed
-        - task: npmAuthenticate@0
-          displayName: 'npm authenticate (internal feed)'
-          inputs:
-            workingFile: ${{ parameters.testWorkspace }}/.npmrc
+    # Set version
+    - template: include-set-package-version.yml
+      parameters:
+        buildDirectory: ${{ parameters.buildDirectory }}
+        buildNumberInPatch: ${{ parameters.buildNumberInPatch }}
+        buildToolsVersionToInstall: ${{ parameters.buildToolsVersionToInstall }}
+        tagName: ${{ parameters.tagName }}
 
-        # Auth to Office feed
-        - task: npmAuthenticate@0
-          displayName: 'npm authenticate (office feed)'
-          inputs:
-            workingFile: ${{ parameters.testWorkspace }}/.npmrc
-            customEndpoint: 'Office Packages - Readonly'
+    # Build
+    - ${{ if ne(parameters.taskBuild, 'false') }}:
+      - task: Npm@1
+        displayName: npm run ${{ parameters.taskBuild }}
+        inputs:
+          command: 'custom'
+          workingDir: ${{ parameters.buildDirectory }}
+          customCommand: 'run ${{ parameters.taskBuild }}'
 
-        # Install test and logger package
-        - task: Npm@1
-          displayName: 'npm install'
-          inputs:
-            command: 'custom'
-            workingDir: ${{ parameters.testWorkspace }}
-            customCommand: 'install $(Initialize.testPackageTgz)'
-            customRegistry: 'useNpmrc'
+    # Lint
+    - ${{ if ne(parameters.taskLint, false) }}:
+      - task: Npm@1
+        displayName: npm run lint
+        inputs:
+          command: 'custom'
+          workingDir: ${{ parameters.buildDirectory }}
+          customCommand: 'run lint'
 
-        # Download Test Files & Install Extra Dependencies
-        # These steps are intended to include extra dependencies that are not available as
-        # part of the normal package .tgz installed previously in the pipeline.
-        - ${{ if ne(parameters.testFileTarName, 'null') }}:
-          # Download Artifact - Test Files
-          - task: DownloadPipelineArtifact@2
-            displayName: Download test files
+    # Test
+    - ${{ if ne(convertToJson(parameters.taskTest), '[]') }}:
+      # Set variable startTest if the build succeed so that we can run all the test tasks whether they are failed or not
+      - script: |
+          echo "##vso[task.setvariable variable=startTest]true"
+        displayName: Start Test
+
+      - ${{ each taskTestStep in parameters.taskTest }}:
+        # Test - With coverage
+        - ${{ if and(eq(variables['testCoverage'], true), startsWith(taskTestStep, 'ci:test')) }}:
+          - task: Npm@1
+            displayName: npm run ${{ taskTestStep }}:coverage
             inputs:
-              source: specific
-              project: internal
-              pipeline: ${{ variables.artifactPipeline }}
-              preferTriggeringPipeline: true
-              allowPartiallySucceededBuilds: true
-              runVersion: latestFromBranch
-              runBranch: $(Build.SourceBranch)
-              artifact: test-files
-              path: $(Pipeline.Workspace)/test-files
-
-          # Unpack test files
-          - task: Bash@3
-            displayName: Unpack test files
-            inputs:
-              workingDir: ${{ parameters.testWorkspace }}
-              targetType: 'inline'
-              script: |
-                mkdir ${{ parameters.testWorkspace }}/node_modules/${{ parameters.testPackage }}/dist/test
-                tar -xvf $(Pipeline.Workspace)/test-files/${{ parameters.testFileTarName }}.test-files.tar -C $(Pipeline.Workspace)/test-files
-                mv $(Pipeline.Workspace)/test-files/test/* ${{ parameters.testWorkspace }}/node_modules/${{ parameters.testPackage }}/dist/test
-
-          - ${{ if ne(parameters.extraDependencies, 'null') }}:
-            # Install extra dependencies for test files
+              command: 'custom'
+              workingDir: ${{ parameters.buildDirectory }}
+              customCommand: 'run ${{ taskTestStep }}:coverage'
+            condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
+        # Test - No coverage
+        - ${{ if or(eq(variables['testCoverage'], false), eq(startsWith(taskTestStep, 'ci:test'), false)) }}:
             - task: Npm@1
-              displayName: 'npm install - extra dependencies for test files'
+              displayName: npm run ${{ taskTestStep }}
               inputs:
                 command: 'custom'
-                workingDir: ${{ parameters.testWorkspace }}
-                customCommand: 'install ${{ parameters.extraDependencies }}'
-                customRegistry: 'useNpmrc'
+                workingDir: ${{ parameters.buildDirectory }}
+                customCommand: 'run ${{ taskTestStep }}'
+              condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
 
-        # run the test
-        - task: Npm@1
-          displayName: '[test] ${{ parameters.testCommand }}'
-          continueOnError: ${{ parameters.continueOnError }}
-          env:
-            ${{ parameters.env }}
+      # Test - Upload coverage results
+      # Some webpacked file using externals introduce file name with quotes in them
+      # and Istanbul's cobertura reporter doesn't escape them causing parse error when we publish
+      # A quick fix to patch the file with sed. (See https://github.com/bcoe/c8/issues/302)
+      - ${{ if eq(variables['testCoverage'], true) }}:
+        - task: Bash@3
+          displayName: 'Check for nyc/report directory'
           inputs:
-            command: 'custom'
-            workingDir: ${{ parameters.testWorkspace }}/node_modules/${{ parameters.testPackage }}
-            customCommand: 'run ${{ parameters.testCommand }}'
-
-        # Upload results
-        - task: PublishTestResults@2
-          displayName: Publish Test Results
+            targetType: 'inline'
+            workingDirectory: ${{ parameters.buildDirectory }}
+            script: |
+              test -d nyc/report && echo '##vso[task.setvariable variable=ReportDirExists;]true' || echo 'No nyc/report directory'
+          condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
+        - task: Bash@3
+          displayName: Patch Coverage Results
           inputs:
-            testResultsFormat: 'JUnit'
-            testResultsFiles: '**/*junit-report.xml'
-            searchFolder: ${{ variables.testPackageDir }}/nyc
-            mergeTestResults: false
-          condition: succeededOrFailed()
+            targetType: 'inline'
+            workingDirectory: ${{ parameters.buildDirectory }}/nyc/report
+            script: |
+              sed -e 's/\(filename=\".*[\\/]external .*\)"\(.*\)""/\1\&quot;\2\&quot;"/' cobertura-coverage.xml > cobertura-coverage-patched.xml
+              condition: and(succeededOrFailed(), eq(variables['ReportDirExists'], 'true'))
+        - task: PublishCodeCoverageResults@1
+          displayName: Publish Code Coverage
+          inputs:
+            codeCoverageTool: Cobertura
+            summaryFileLocation: ${{ parameters.buildDirectory }}/nyc/report/cobertura-coverage-patched.xml
+            reportDirectory: ${{ parameters.buildDirectory }}/nyc/report
+            failIfCoverageEmpty: true
+          condition: and(succeededOrFailed(), eq(variables['ReportDirExists'], 'true'))
 
+      # Test - Upload results
+      - task: PublishTestResults@2
+        displayName: Publish Test Results
+        inputs:
+          testResultsFormat: 'JUnit'
+          testResultsFiles: '**/*junit-report.xml'
+          searchFolder: ${{ parameters.buildDirectory }}/nyc
+          mergeTestResults: false
+        condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))

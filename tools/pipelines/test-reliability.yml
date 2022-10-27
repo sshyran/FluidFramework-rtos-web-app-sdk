@@ -11,13 +11,9 @@ pr: none
 parameters:
 - name: poolBuild
   type: object
-  default: Small
+  default: Large
 
-- name: poolName
-  type: string
-  default: Small 1
-
-- name: taskNames
+- name: stageNames
   type: object
   default:
   - Test1
@@ -125,201 +121,25 @@ variables:
     nonScopedPackages: ${{ parameters.nonScopedPackages }}
 
 stages:
-  - stage: Build_and_Test
-    displayName: Build and Test
-    jobs:
-      # Job - Build
-      - job: Build
-        displayName: Build
-        pool:
-          name: ${{ parameters.poolBuild }}
-        variables:
-          testCoverage: true
-          releaseBuildVar: $[variables.releaseBuild]
-        steps:
-        # Check the agent name
-        - bash: echo "$(Agent.Name)"
-        - bash: |
-            echo "##vso[task.setvariable variable=agentName;isOutput=true;]$(Agent.Name)"
-          name: setAgentName
-        # Setup
-        - checkout: self
-          clean: true
-          lfs: ${{ parameters.checkoutSubmodules }}
-          submodules: ${{ parameters.checkoutSubmodules }}
-
-        - task: Bash@3
-          displayName: Parameters
-          inputs:
-            targetType: 'inline'
-            workingDirectory: ${{ parameters.buildDirectory }}
-            script: |
-              # Show all task group conditions
-
-              echo "
-              Pipeline Variables:
-                releaseBuild=$(releaseBuildVar)
-
-              Override Parameters:
-                publishOverride=${{ parameters.publishOverride }}
-                releaseBuildOverride=${{ parameters.releaseBuildOverride }}
-
-              Tasks Parameters:
-                BuildDir=${{ parameters.buildDirectory }}
-                Build=${{ parameters.taskBuild }}
-                Lint=${{ parameters.taskLint }}
-                Test=${{ convertToJson(parameters.taskTest) }}
-                BuildDoc=${{ parameters.taskBuildDocs }}
-                TestCoverage=$(testCoverage)
-
-              Publish Parameters:
-                nonScopedPackages=${{ join(', ', parameters.nonScopedPackages) }}
-
-              Computed variables:
-                shouldPublish=${{ variables.shouldPublish }}
-                componentDetection=${{ variables.componentDetection }}
-                publish=${{ variables.publish }}
-                canRelease=${{ variables.canRelease }}
-                publishNonScopedPackages=${{ variables.publishNonScopedPackages }}
-                targetBranchName = $(System.PullRequest.TargetBranch)
-
-                release=$(release)
-                "
-
-              # Error checking
-              if [[ "$(release)" == "release" ]]; then
-                if [[ "${{ variables.canRelease }}" == "False" ]]; then
-                  echo "##vso[task.logissue type=error]Invalid branch ${{ variables['Build.SourceBranch'] }} for release"
-                  exit -1;
-                fi
-
-                if [ -f "lerna.json" ]; then
-                  grep -e fluid.*[0-9]-[0-9] `find packages -name 'package.json'`
-                else
-                  grep -e fluid.*[0-9]-[0-9] `find . -name 'package.json'`
-                fi
-
-                if [[ $? == 0 ]]; then
-                  echo "##vso[task.logissue type=error]Release shouldn't contain prerelease dependencies"
-                  exit -1;
-                fi
-              fi
-
-              if [[ "$(release)" == "prerelease" ]]; then
-                if [[ "${{ parameters.buildNumberInPatch }}" == "true" ]]; then
-                  echo "##vso[task.logissue type=error] Prerelease not allow for builds that put build number as the patch version"
-                  exit -1;
-                fi
-              fi
-
-              if [[ "$(release)" != "none" ]] && [[ "$(release)" != "" ]]; then
-                if [[ "${{ variables.publish }}" != "True" ]]; then
-                  echo "##vso[task.logissue type=error]'$(release)'' is set but package is not published. Either the branch doesn't default to publish or it is skipped."
-                  exit -1;
-                fi
-              fi
-
-        # Install
-        - task: UseNode@1
-          displayName: Use Node 14.x
-          inputs:
-            version: 14.x
-        - task: Npm@1
-          displayName: npm ci
-          inputs:
-            command: 'custom'
-            workingDir: ${{ parameters.buildDirectory }}
-            customCommand: 'ci --unsafe-perm'
-            customRegistry: 'useNpmrc'
-
-        # Set version
-        - template: templates/include-set-package-version.yml
-          parameters:
-            buildDirectory: ${{ parameters.buildDirectory }}
-            buildNumberInPatch: ${{ parameters.buildNumberInPatch }}
-            buildToolsVersionToInstall: ${{ parameters.buildToolsVersionToInstall }}
-            tagName: ${{ parameters.tagName }}
-
-        # Build
-        - ${{ if ne(parameters.taskBuild, 'false') }}:
-          - task: Npm@1
-            displayName: npm run ${{ parameters.taskBuild }}
-            inputs:
-              command: 'custom'
-              workingDir: ${{ parameters.buildDirectory }}
-              customCommand: 'run ${{ parameters.taskBuild }}'
-
-        # Lint
-        - ${{ if ne(parameters.taskLint, false) }}:
-          - task: Npm@1
-            displayName: npm run lint
-            inputs:
-              command: 'custom'
-              workingDir: ${{ parameters.buildDirectory }}
-              customCommand: 'run lint'
-
-        # Repeat the test
-        - ${{ each taskName in parameters.taskNames }}:
-          - ${{ if ne(convertToJson(parameters.taskTest), '[]') }}:
-          # Set variable startTest if the build succeed so that we can run all the test tasks whether they are failed or not
-            - script: |
-                echo "##vso[task.setvariable variable=startTest]true"
-              displayName: ${{ taskName }}
-            - ${{ each taskTestStep in parameters.taskTest }}:
-              # Test - With coverage
-              - ${{ if eq(startsWith(taskTestStep, 'ci:test'), true) }}:
-                - task: Npm@1
-                  displayName: npm run ${{ taskTestStep }}:coverage
-                  inputs:
-                    command: 'custom'
-                    workingDir: ${{ parameters.buildDirectory }}
-                    customCommand: 'run ${{ taskTestStep }}:coverage'
-                  condition: eq(variables['startTest'], 'true')
-              # Test - No coverage
-              - ${{ if eq(startsWith(taskTestStep, 'ci:test'), false) }}:
-                  - task: Npm@1
-                    displayName: npm run ${{ taskTestStep }}
-                    inputs:
-                      command: 'custom'
-                      workingDir: ${{ parameters.buildDirectory }}
-                      customCommand: 'run ${{ taskTestStep }}'
-                    condition: eq(variables['startTest'], 'true')
-            # Test - Upload coverage results
-            # Some webpacked file using externals introduce file name with quotes in them
-            # and Istanbul's cobertura reporter doesn't escape them causing parse error when we publish
-            # A quick fix to patch the file with sed. (See https://github.com/bcoe/c8/issues/302)
-            - ${{ if eq(true, true) }}:
-              - task: Bash@3
-                displayName: 'Check for nyc/report directory'
-                inputs:
-                  targetType: 'inline'
-                  workingDirectory: ${{ parameters.buildDirectory }}
-                  script: |
-                    test -d nyc/report && echo '##vso[task.setvariable variable=ReportDirExists;]true' || echo 'No nyc/report directory'
-                condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
-              - task: Bash@3
-                displayName: Patch Coverage Results
-                inputs:
-                  targetType: 'inline'
-                  workingDirectory: ${{ parameters.buildDirectory }}/nyc/report
-                  script: |
-                    sed -e 's/\(filename=\".*[\\/]external .*\)"\(.*\)""/\1\&quot;\2\&quot;"/' cobertura-coverage.xml > cobertura-coverage-patched.xml
-                condition: and(succeededOrFailed(), eq(variables['ReportDirExists'], 'true'))
-              - task: PublishCodeCoverageResults@1
-                displayName: Publish Code Coverage
-                inputs:
-                  codeCoverageTool: Cobertura
-                  summaryFileLocation: ${{ parameters.buildDirectory }}/nyc/report/cobertura-coverage-patched.xml
-                  reportDirectory: ${{ parameters.buildDirectory }}/nyc/report
-                  failIfCoverageEmpty: true
-                condition: and(succeededOrFailed(), eq(variables['ReportDirExists'], 'true'))
-
-            # Test - Upload results
-            - task: PublishTestResults@2
-              displayName: Publish Test Results
-              inputs:
-                testResultsFormat: 'JUnit'
-                testResultsFiles: '**/*junit-report.xml'
-                searchFolder: ${{ parameters.buildDirectory }}/nyc
-                mergeTestResults: false
-              condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
+  - ${{ each stageName in parameters.stageNames }}:
+    - stage:
+      displayName: ${{ stageName }}
+      dependsOn: []
+      jobs:
+      - template: templates/include-test-reliability.yml
+        parameters:
+          publishOverride: ${{ parameters.publishOverride }}
+          releaseBuildOverride: ${{ parameters.releaseBuildOverride }}
+          nonScopedPackages: ${{ parameters.nonScopedPackages }}
+          buildToolsVersionToInstall: ${{ parameters.buildToolsVersionToInstall }}
+          buildDirectory: .
+          tagName: client
+          poolBuild: Large
+          checkoutSubmodules: true
+          taskTest:
+          - ci:test:mocha
+          - ci:test:jest
+          - ci:test:realsvc:local
+          - ci:test:realsvc:tinylicious
+          - ci:test:stress:tinylicious
+          - test:copyresults
