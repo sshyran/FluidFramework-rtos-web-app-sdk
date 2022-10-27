@@ -125,7 +125,7 @@ variables:
     nonScopedPackages: ${{ parameters.nonScopedPackages }}
 
 stages:
-  - stage: Build and Test
+  - stage: Build-and-Test
     displayName: Build and Test
     jobs:
       # Job - Build
