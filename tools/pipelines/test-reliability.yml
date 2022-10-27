@@ -134,7 +134,7 @@ stages:
         pool:
           name: ${{ parameters.poolBuild }}
           demands:
-          - Agent.Name -equals ${{ parameters.poolName }}
+          - Agent.Name -equals "Small 1"
         variables:
           testCoverage: true
           releaseBuildVar: $[variables.releaseBuild]
@@ -261,7 +261,7 @@ stages:
           pool:
             name: ${{ parameters.poolBuild }}
             demands:
-            - Agent.Name -equals ${{ parameters.poolName }}
+            - Agent.Name -equals "Small 1"
           dependsOn: build
           steps:
           # Test
