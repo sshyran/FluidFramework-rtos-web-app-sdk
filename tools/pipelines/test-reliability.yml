@@ -13,7 +13,11 @@ parameters:
   type: object
   default: Small
 
-- name: stageNames
+- name: poolName
+  type: string
+  default: Small 1
+
+- name: jobNames
   type: object
   default:
   - Test 1
@@ -120,7 +124,6 @@ variables:
     buildNumberInPatch: ${{ parameters.buildNumberInPatch }}
     nonScopedPackages: ${{ parameters.nonScopedPackages }}
 
-
 stages:
   - stage: Build
     displayName: Build Stage
@@ -128,7 +131,10 @@ stages:
       # Job - Build
       - job: build
         displayName: Build
-        pool: ${{ parameters.poolBuild }}
+        pool:
+          name: ${{ parameters.poolBuild }}
+          demands:
+          - Agent.Name -equals ${{ parameters.poolName }}
         variables:
           testCoverage: true
           releaseBuildVar: $[variables.releaseBuild]
@@ -172,13 +178,10 @@ stages:
                 publish=${{ variables.publish }}
                 canRelease=${{ variables.canRelease }}
                 publishNonScopedPackages=${{ variables.publishNonScopedPackages }}
+                targetBranchName = $(System.PullRequest.TargetBranch)
 
-                release=$(release)"
-              
-              # Assign target branch
-              if [[ ${{ variables['Build.Reason'] }} == "PullRequest" ]]; then
-                echo "targetBranchName = $(System.PullRequest.TargetBranch)"
-              fi
+                release=$(release)
+                "
 
               # Error checking
               if [[ "$(release)" == "release" ]]; then
@@ -252,16 +255,13 @@ stages:
               workingDir: ${{ parameters.buildDirectory }}
               customCommand: 'run lint'
 
-
-
-  - ${{ each stageName in parameters.stageNames }}:
-    - stage:
-      displayName: ${{ stageName }}
-      dependsOn: Build
-      jobs:
+      - ${{ each jobName in parameters.jobNames }}:
         - job: Test
-          displayName: Test
-          pool: ${{ parameters.poolBuild }}
+          displayName: ${{ jobName }}
+          pool:
+            name: ${{ parameters.poolBuild }}
+            demands:
+            - Agent.Name -equals ${{ parameters.poolName }}
           steps:
           # Test
           - ${{ if ne(convertToJson(parameters.taskTest), '[]') }}:
@@ -269,26 +269,6 @@ stages:
             - script: |
                 echo "##vso[task.setvariable variable=startTest]true"
               displayName: Start Test
-            # Install
-            ## Not sure if it is necessary
-            - checkout: self
-              clean: true
-              lfs: false
-              submodules: false
-
-            - task: UseNode@1
-              displayName: Use Node 14.x
-              inputs:
-                version: 14.x
-
-            - task: Npm@1
-              displayName: npm ci
-              inputs:
-                command: 'custom'
-                workingDir: ${{ parameters.buildDirectory }}
-                customCommand: 'ci --unsafe-perm'
-                customRegistry: 'useNpmrc'
-
             - ${{ each taskTestStep in parameters.taskTest }}:
               # Test - With coverage
               - ${{ if eq(startsWith(taskTestStep, 'ci:test'), true) }}:
@@ -348,5 +328,3 @@ stages:
                 searchFolder: ${{ parameters.buildDirectory }}/nyc
                 mergeTestResults: false
               condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
-
-
