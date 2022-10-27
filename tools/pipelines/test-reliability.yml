@@ -125,8 +125,8 @@ variables:
     nonScopedPackages: ${{ parameters.nonScopedPackages }}
 
 stages:
-  - stage: Build
-    displayName: Build Stage
+  - stage: Build and Test
+    displayName: Build and Test
     jobs:
       # Job - Build
       - job: build
@@ -256,7 +256,7 @@ stages:
               customCommand: 'run lint'
 
       - ${{ each jobName in parameters.jobNames }}:
-        - job: Test
+        - job: ${{ jobName }}
           displayName: ${{ jobName }}
           pool:
             name: ${{ parameters.poolBuild }}
