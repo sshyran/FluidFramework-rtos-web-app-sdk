@@ -268,7 +268,6 @@ stages:
             name: ${{ parameters.poolBuild }}
             demands:
             - Agent.Name -equals $(testAgentName)
-
           steps:
           # Print the agent Name first
           - bash: echo "$(testAgentName)"
