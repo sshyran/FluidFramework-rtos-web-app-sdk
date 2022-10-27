@@ -57,6 +57,10 @@ parameters:
   type: string
   default: repo
 
+- name: timeoutInMinutes
+  type: number
+  default: 60
+
 trigger: none
 
 variables:
@@ -80,6 +84,7 @@ jobs:
     variables:
       testCoverage: ${{ ne(variables['Build.Reason'], 'PullRequest') }}
       releaseBuildVar: $[variables.releaseBuild]
+    timeoutInMinutes: ${{ parameters.timeoutInMinutes }}
     steps:
     # Setup
     - checkout: self

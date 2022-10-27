@@ -140,6 +140,7 @@ stages:
           tagName: client
           poolBuild: Large
           checkoutSubmodules: true
+          timeoutInMinutes: 1440
           taskTest:
           - ci:test:mocha
           - ci:test:jest
