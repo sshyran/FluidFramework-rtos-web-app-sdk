@@ -97,6 +97,10 @@ parameters:
   type: boolean
   default: false
 
+- name: timeoutInMinutes
+  type: number
+  default: 360
+
 schedules:
   - cron: "00 03 * * SUN"
     displayName: Scheduled Tests on Saturday Nights Weekly
