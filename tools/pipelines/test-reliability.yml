@@ -262,6 +262,7 @@ stages:
             name: ${{ parameters.poolBuild }}
             demands:
             - Agent.Name -equals ${{ parameters.poolName }}
+          dependsOn: build
           steps:
           # Test
           - ${{ if ne(convertToJson(parameters.taskTest), '[]') }}:
