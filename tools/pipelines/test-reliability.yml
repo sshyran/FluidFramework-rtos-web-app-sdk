@@ -272,6 +272,18 @@ stages:
           # Print the agent Name first
           - bash: echo "$(testAgentName)"
             displayName: Print Test Agent
+          # Install
+          - task: UseNode@1
+            displayName: Use Node 14.x
+            inputs:
+              version: 14.x
+          - task: Npm@1
+            displayName: npm ci
+            inputs:
+              command: 'custom'
+              workingDir: ${{ parameters.buildDirectory }}
+              customCommand: 'ci --unsafe-perm'
+              customRegistry: 'useNpmrc'
           # Test
           - ${{ if ne(convertToJson(parameters.taskTest), '[]') }}:
           # Set variable startTest if the build succeed so that we can run all the test tasks whether they are failed or not
