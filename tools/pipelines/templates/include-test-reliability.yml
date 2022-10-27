@@ -61,21 +61,6 @@ parameters:
   type: number
   default: 60
 
-trigger: none
-
-variables:
-  # We use 'chalk' to colorize output, which auto-detects color support in the
-  # running terminal.  The log output shown in Azure DevOps job runs only has
-  # basic ANSI color support though, so force that in the pipeline
-  - name: FORCE_COLOR
-    value: 1
-  - template: include-vars.yml
-    parameters:
-      publishOverride: ${{ parameters.publishOverride }}
-      releaseBuildOverride: ${{ parameters.releaseBuildOverride }}
-      buildNumberInPatch: ${{ parameters.buildNumberInPatch }}
-      nonScopedPackages: ${{ parameters.nonScopedPackages }}
-
 jobs:
   # Job - Build
   - job: build
