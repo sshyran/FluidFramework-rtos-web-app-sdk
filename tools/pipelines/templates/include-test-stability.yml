@@ -1,7 +1,7 @@
 # Copyright (c) Microsoft Corporation and contributors. All rights reserved.
 # Licensed under the MIT License.
 
-# build-npm-package template to build NPM packages/projects
+# include-test-stability template to build and test NPM packages/projects
 
 parameters:
 - name: buildDirectory
