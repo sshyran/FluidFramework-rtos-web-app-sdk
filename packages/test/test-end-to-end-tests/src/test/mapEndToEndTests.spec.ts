@@ -506,7 +506,7 @@ describeNoCompat("SharedMap orderSequentially", (getTestObjectProvider) => {
         assert.equal(changedEventData[3].key, "key");
         assert.equal(changedEventData[3].previousValue, "last");
         assert.equal(changedEventData[4].key, "key");
-        assert.equal(changedEventData[4].previousValue, "new");
+        assert.equal(changedEventData[4].previousValue, "old");
     });
 
     it("Should rollback delete", async () => {
