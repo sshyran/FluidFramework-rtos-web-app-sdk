@@ -69,6 +69,8 @@ jobs:
     variables:
       testCoverage: ${{ ne(variables['Build.Reason'], 'PullRequest') }}
       releaseBuildVar: $[variables.releaseBuild]
+      ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+        targetBranchName: $(System.PullRequest.TargetBranch)"
     timeoutInMinutes: ${{ parameters.timeoutInMinutes }}
     steps:
     # Setup
