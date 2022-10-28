@@ -98,8 +98,8 @@ parameters:
   default: false
 
 schedules:
-  - cron: "00 03 * * SUN"
-    displayName: Scheduled Tests on Saturday Nights Weekly
+  - cron: "15 14 * * FRI"
+    displayName: Scheduled Tests
     branches:
       include:
       - main
