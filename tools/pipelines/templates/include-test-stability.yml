@@ -40,16 +40,6 @@ parameters:
   type: string
   default:
 
-- name: nonScopedPackages
-  type: object
-  default: []
-
-- name: publishOverride
-  type: string
-
-- name: releaseBuildOverride
-  type: string
-
 - name: tagName
   type: string
 
@@ -91,10 +81,6 @@ jobs:
           Pipeline Variables:
             releaseBuild=$(releaseBuildVar)
 
-          Override Parameters:
-            publishOverride=${{ parameters.publishOverride }}
-            releaseBuildOverride=${{ parameters.releaseBuildOverride }}
-
           Tasks Parameters:
             BuildDir=${{ parameters.buildDirectory }}
             Build=${{ parameters.taskBuild }}
@@ -103,15 +89,11 @@ jobs:
             BuildDoc=${{ parameters.taskBuildDocs }}
             TestCoverage=$(testCoverage)
 
-          Publish Parameters:
-            nonScopedPackages=${{ join(', ', parameters.nonScopedPackages) }}
-
           Computed variables:
             shouldPublish=${{ variables.shouldPublish }}
             componentDetection=${{ variables.componentDetection }}
             publish=${{ variables.publish }}
             canRelease=${{ variables.canRelease }}
-            publishNonScopedPackages=${{ variables.publishNonScopedPackages }}
             targetBranchName = $(System.PullRequest.TargetBranch)
 
             release=$(release)"
