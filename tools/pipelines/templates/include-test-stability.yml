@@ -85,15 +85,6 @@ jobs:
             BuildDoc=${{ parameters.taskBuildDocs }}
             TestCoverage=$(testCoverage)
 
-          Computed variables:
-            shouldPublish=${{ variables.shouldPublish }}
-            componentDetection=${{ variables.componentDetection }}
-            publish=${{ variables.publish }}
-            canRelease=${{ variables.canRelease }}
-            targetBranchName = $(System.PullRequest.TargetBranch)
-
-            release=$(release)"
-
           # Error checking
           if [[ "$(release)" == "release" ]]; then
             if [[ "${{ variables.canRelease }}" == "False" ]]; then
