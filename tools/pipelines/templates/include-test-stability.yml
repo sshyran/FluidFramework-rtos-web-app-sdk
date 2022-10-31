@@ -13,7 +13,7 @@ parameters:
 
 - name: taskBuildDocs
   type: boolean
-  default: true
+  default: false
 
 - name: taskLint
   type: boolean
@@ -23,10 +23,6 @@ parameters:
   type: object
   default:
   - ci:test
-
-- name: poolCG
-  type: object
-  default: Small
 
 - name: poolBuild
   type: object
