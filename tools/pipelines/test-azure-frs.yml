@@ -81,7 +81,7 @@ stages:
     displayName: test script call
     dependsOn: []
     jobs:
-    - job: call script
+    - job: callScript
       displayName: Run
       steps:
       - task: CmdLine@2
