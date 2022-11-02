@@ -1,3 +1,4 @@
+
 # Copyright (c) Microsoft Corporation and contributors. All rights reserved.
 # Licensed under the MIT License.
 
@@ -89,3 +90,16 @@ stages:
         inputs:
           script: node testFunction.mjs
           workingDirectory: tools/pipelines/helper
+
+  # - stage:
+  #   displayName: test script call
+  #   dependsOn: []
+  #   jobs:
+  #   - job: callScript
+  #     displayName: Run
+  #     steps:
+  #     - task: CmdLine@2
+  #       displayName: Test console log script
+  #       inputs:
+  #         script: node testFunction.mjs
+  #         workingDirectory: tools/pipelines/helper
