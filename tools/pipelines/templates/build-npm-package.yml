@@ -301,6 +301,13 @@ stages:
               mergeTestResults: false
             condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
 
+          # Test - Display failed tests
+          - task: CmdLine@2
+            displayName: Display Failed Tests
+            inputs:
+              script: node testReport.mjs ${{ parameters.buildDirectory }}/nyc/*junit-report.xml
+              workingDirectory: tools/pipelines/helper
+
         # Pack
         - ${{ if ne(parameters.taskPack, false) }}:
           - task: Bash@3
