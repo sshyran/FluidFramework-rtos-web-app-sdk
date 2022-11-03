@@ -305,7 +305,7 @@ stages:
           - task: CmdLine@2
             displayName: Display Failed Tests
             inputs:
-              script: node testReport.mjs ${{ parameters.buildDirectory }}/nyc/*junit-report.xml
+              script: node testReportParser.mjs ${{ parameters.buildDirectory }}/nyc/*junit-report.xml
               workingDirectory: tools/pipelines/helper
 
         # Pack
