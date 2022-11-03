@@ -87,5 +87,5 @@ stages:
       - task: CmdLine@2
         displayName: Test console log script
         inputs:
-          script: node testFunction.mjs
+          script: node testFunction.mjs "test input text"
           workingDirectory: tools/pipelines/helper

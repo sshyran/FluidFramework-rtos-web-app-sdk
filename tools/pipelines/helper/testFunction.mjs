@@ -3,9 +3,11 @@
  * Licensed under the MIT License.
  */
 
+var textInput = process.argv.slice(2)[0];
+
 const testConsoleFunction = () => {
 
-    let testText = "hello world!"
+    let testText = textInput;
 
     console.log(testText);
 
