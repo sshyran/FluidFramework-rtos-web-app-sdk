@@ -122,10 +122,10 @@ stages:
           submodules: ${{ parameters.checkoutSubmodules }}
 
         # Print Hello World
-        - task: PowerShell@2
+        - task: Bash@3
           inputs:
             targetType: 'inline'
-            script: Write-Host 'Hello World'
+            script: echo 'Hello World'
           displayName: 'Print Hello World'
 
         - task: Bash@3
