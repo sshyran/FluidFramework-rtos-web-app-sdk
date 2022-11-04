@@ -306,15 +306,15 @@ stages:
             displayName: Display Failed Tests
             inputs:
               targetType: inline
-              script: |
+              script:
                 $filePath = ${{ parameters.buildDirectory }}/nyc/*junit-report.xml
                 [xml]$data = Get-Content $filePath
                 $tests = data.testsuite.testcase
                 $failedTests = $tests | Where-Object -FilterScript { $_.failure }
-                foreach ($test in $failedTests) {
-                  echo "##[error]"+$test.name
-                  echo "##[error]"+$test.failure
-                }
+                # foreach ($test in $failedTests) {
+                #   echo "##[error]"+$test.name
+                #   echo "##[error]"+$test.failure
+                # }
 
         # Pack
         - ${{ if ne(parameters.taskPack, false) }}:
