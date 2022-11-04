@@ -302,14 +302,11 @@ stages:
             condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
 
           # Test - Display failed tests
-          # - task: PowerShell@2
-          #   displayName: Display Failed Tests
-          #   inputs:
-          #     targetType: inline
-          #     script:
-          #       Write-Host Hello World
-          - powershell: Write-Host Hello World
-
+          - task: CmdLine@2
+            displayName: Display Failed Tests
+            inputs:
+              script:
+                Write-Host Hello World
 
 
         # Pack
