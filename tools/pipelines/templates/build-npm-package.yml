@@ -302,20 +302,15 @@ stages:
             condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
 
           # Test - Display failed tests
-          - task: PowerShell@2
-            displayName: Display Failed Tests
-            inputs:
-              targetType: inline
-              script:
-                Write-Host Hello World
-                # $filePath = ${{ parameters.buildDirectory }}/nyc/*junit-report.xml
-                # [xml]$data = Get-Content $filePath
-                # $tests = data.testsuite.testcase
-                # $failedTests = $tests | Where-Object -FilterScript { $_.failure }
-                # foreach ($test in $failedTests) {
-                #   echo "##[error]"+$test.name
-                #   echo "##[error]"+$test.failure
-                # }
+          # - task: PowerShell@2
+          #   displayName: Display Failed Tests
+          #   inputs:
+          #     targetType: inline
+          #     script:
+          #       Write-Host Hello World
+          - powershell: Write-Host Hello World
+
+
 
         # Pack
         - ${{ if ne(parameters.taskPack, false) }}:
