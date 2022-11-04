@@ -306,8 +306,8 @@ stages:
             inputs:
               targetType: 'filePath'
               filePath: tools/helper/test1.ps1
+              pwsh: true
             displayName: 'Print Hello World'
-            pwsh: true
 
 
         # Pack
