@@ -307,10 +307,11 @@ stages:
             inputs:
               targetType: inline
               script:
-                $filePath = ${{ parameters.buildDirectory }}/nyc/*junit-report.xml
-                [xml]$data = Get-Content $filePath
-                $tests = data.testsuite.testcase
-                $failedTests = $tests | Where-Object -FilterScript { $_.failure }
+                Write-Host Hello World
+                # $filePath = ${{ parameters.buildDirectory }}/nyc/*junit-report.xml
+                # [xml]$data = Get-Content $filePath
+                # $tests = data.testsuite.testcase
+                # $failedTests = $tests | Where-Object -FilterScript { $_.failure }
                 # foreach ($test in $failedTests) {
                 #   echo "##[error]"+$test.name
                 #   echo "##[error]"+$test.failure
