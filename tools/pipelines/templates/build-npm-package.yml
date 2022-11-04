@@ -121,6 +121,13 @@ stages:
           lfs: ${{ parameters.checkoutSubmodules }}
           submodules: ${{ parameters.checkoutSubmodules }}
 
+        # Print Hello World
+        - task: PowerShell@2
+          inputs:
+            targetType: 'inline'
+            script: Write-Host 'Hello World'
+          displayName: 'Print Hello World'
+
         - task: Bash@3
           displayName: Parameters
           inputs:
@@ -301,12 +308,12 @@ stages:
               mergeTestResults: false
             condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
 
-          # Test - Display failed tests
-          - task: PowerShell@2
-            inputs:
-              targetType: 'inline'
-              script: Write-Host 'Hello World'
-            displayName: 'Print Hello World'
+          # # Test - Display failed tests
+          # - task: PowerShell@2
+          #   inputs:
+          #     targetType: 'inline'
+          #     script: Write-Host 'Hello World'
+          #   displayName: 'Print Hello World'
 
 
         # Pack
