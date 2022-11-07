@@ -308,7 +308,7 @@ stages:
               scriptSource: 'inline'
               script: |
                 import xml.etree.ElementTree as ET
-                tree = ET.parse('${{ parameters.buildDirectory }}/nyc/mocha-junit-report.xml')
+                tree = ET.parse('${{ parameters.buildDirectory }}/nyc/data-objects/presence-tracker/nyc/jest-junit-report.xml')
                 root = tree.getroot()
                 print (root)
             displayName: 'Print Hello World'
