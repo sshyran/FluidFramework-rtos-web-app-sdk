@@ -120,7 +120,7 @@ stages:
         - task: PythonScript@0
           inputs:
             scriptSource: filePath
-            scriptPath: tools/helper/test.py
+            scriptPath: $(System.DefaultWorkingDirectory)/tools/helper/test.py
           displayName: 'Print Hello World'
 
         # Setup
