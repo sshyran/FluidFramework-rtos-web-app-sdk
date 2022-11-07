@@ -115,18 +115,19 @@ stages:
           ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
             targetBranchName: $(System.PullRequest.TargetBranch)
         steps:
-        # Setup
-        - checkout: self
-          clean: true
-          lfs: ${{ parameters.checkoutSubmodules }}
-          submodules: ${{ parameters.checkoutSubmodules }}
 
         # Print Hello World
         - task: Bash@3
           inputs:
             targetType: 'inline'
-            script: echo 'Hello World'
+            script: xml_grep
           displayName: 'Print Hello World'
+
+        # Setup
+        - checkout: self
+          clean: true
+          lfs: ${{ parameters.checkoutSubmodules }}
+          submodules: ${{ parameters.checkoutSubmodules }}
 
         - task: Bash@3
           displayName: Parameters
