@@ -116,13 +116,6 @@ stages:
             targetBranchName: $(System.PullRequest.TargetBranch)
         steps:
 
-        # Print Hello World
-        - task: PythonScript@0
-          inputs:
-            scriptSource: 'inline'
-            script: import xml.etree.ElementTree as ET
-          displayName: 'Print Hello World'
-
         # Setup
         - checkout: self
           clean: true
@@ -309,12 +302,16 @@ stages:
               mergeTestResults: false
             condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
 
-          # # Test - Display failed tests
-          # - task: PowerShell@2
-          #   inputs:
-          #     targetType: 'inline'
-          #     script: Write-Host 'Hello World'
-          #   displayName: 'Print Hello World'
+          # Print Hello World
+          - task: PythonScript@0
+            inputs:
+              scriptSource: 'inline'
+              script: |
+                import xml.etree.ElementTree as ET
+                tree = ET.parse(${{ parameters.buildDirectory }}/nyc/mocha-junit-report.xml)
+                root = tree.getroot()
+                print (root)
+            displayName: 'Print Hello World'
 
 
         # Pack
