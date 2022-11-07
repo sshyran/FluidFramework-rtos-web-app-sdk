@@ -119,8 +119,8 @@ stages:
         # Print Hello World
         - task: PythonScript@0
           inputs:
-            scriptSource: 'inline'
-            script: print('Hello, world!')
+            scriptSource: filePath
+            scriptPath: tools/helper/test.py
           displayName: 'Print Hello World'
 
         # Setup

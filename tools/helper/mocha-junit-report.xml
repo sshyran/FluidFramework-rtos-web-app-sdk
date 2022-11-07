@@ -1,0 +1,43 @@
+<testsuite name="Mocha Tests" tests="14" failures="0" errors="3" skipped="0" timestamp="Wed, 02 Nov 2022 19:01:36 GMT" time="0.028">
+<testcase classname="Cell Local state APIs" name="Can create a cell" time="0"/>
+<testcase classname="Cell Local state APIs" name="Can set and get cell data" time="0.001"><failure>Could not retrieve cell value
+
+      + expected - actual
+
+      -testValue
+      +123
+      
+AssertionError [ERR_ASSERTION]: Could not retrieve cell value
+    at Context.&#x3C;anonymous&#x3E; (dist\test\cell.spec.js:51:33)
+    at processImmediate (internal/timers.js:464:21)</failure></testcase>
+<testcase classname="Cell Local state APIs" name="can delete cell data" time="0.001"><failure>Could not retrieve cell value
+
+      + expected - actual
+
+      -testValue
+      +123
+      
+AssertionError [ERR_ASSERTION]: Could not retrieve cell value
+    at Context.&#x3C;anonymous&#x3E; (dist\test\cell.spec.js:55:33)
+    at processImmediate (internal/timers.js:464:21)</failure></testcase>
+<testcase classname="Cell Local state APIs" name="can load a SharedCell from snapshot" time="0.001"><failure>Could not retrieve cell value
+
+      + expected - actual
+
+      -testValue
+      +123
+      
+AssertionError [ERR_ASSERTION]: Could not retrieve cell value
+    at Context.&#x3C;anonymous&#x3E; (dist\test\cell.spec.js:61:33)
+    at processImmediate (internal/timers.js:464:21)</failure></testcase>
+<testcase classname="Cell Local state APIs" name="can load a SharedCell with undefined value from snapshot" time="0.002"/>
+<testcase classname="Cell Local state Op processing in local state" name="should correctly process a set operation sent in local state" time="0.002"/>
+<testcase classname="Cell Connected state APIs" name="Can set and get cell data" time="0"/>
+<testcase classname="Cell Connected state APIs" name="can delete cell data" time="0.001"/>
+<testcase classname="Cell Reconnection" name="can resend unacked ops on reconnection" time="0.001"/>
+<testcase classname="Cell Reconnection" name="can store ops in disconnected state and resend them on reconnection" time="0"/>
+<testcase classname="Cell Garbage Collection" name="can generate GC nodes with routes to Fluid objects in data" time="0.002"/>
+<testcase classname="Cell Garbage Collection" name="can generate GC nodes when handles are deleted from data" time="0"/>
+<testcase classname="Cell Garbage Collection" name="can generate GC nodes when handles are added to data" time="0"/>
+<testcase classname="Cell Garbage Collection" name="can generate GC nodes with nested handles in data" time="0"/>
+</testsuite>
