@@ -119,8 +119,8 @@ stages:
         # Print Hello World
         - task: PythonScript@0
           inputs:
-            scriptSource: filePath
-            scriptPath: $(System.DefaultWorkingDirectory)/tools/helper/test.py
+            scriptSource: 'inline'
+            script: import xml.etree.ElementTree as ET
           displayName: 'Print Hello World'
 
         # Setup
