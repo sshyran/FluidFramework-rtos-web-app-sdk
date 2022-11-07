@@ -117,10 +117,10 @@ stages:
         steps:
 
         # Print Hello World
-        - task: PowerShell@2
+        - task: PowerShell@1
           inputs:
-            targetType: 'inline'
-            script: Write-Host HelloWorld
+            scriptType: 'inlineScript'
+            inlineScript: Write-Host HelloWorld
           displayName: 'Print Hello World'
 
         # Setup
