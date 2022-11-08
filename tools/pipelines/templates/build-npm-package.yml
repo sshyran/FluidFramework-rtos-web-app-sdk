@@ -308,7 +308,7 @@ stages:
             inputs:
               testResultsFormat: 'JUnit'
               testResultsFiles: '**/*junit-report.xml'
-              searchFolder: ${{ System.DefaultWorkingDirectory }}
+              searchFolder: $(System.DefaultWorkingDirectory)
               mergeTestResults: true
             condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
 
