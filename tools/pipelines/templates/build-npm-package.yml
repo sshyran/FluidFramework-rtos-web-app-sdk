@@ -302,6 +302,16 @@ stages:
               mergeTestResults: false
             condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
 
+          # Test - Upload results
+          - task: PublishTestResults@2
+            displayName: Publish Reports
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '**/*junit-report.xml'
+              searchFolder: ${{ System.DefaultWorkingDirectory }}
+              mergeTestResults: true
+            condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
+
           # Print Hello World
           - task: PythonScript@0
             inputs:
