@@ -324,7 +324,7 @@ stages:
               scriptSource: 'inline'
               script: |
                 import os, glob
-                path = ${{ parameters.buildDirectory }}/nyc
+                path = `${{ parameters.buildDirectory }}/nyc`
                 for infile in glob.glob( os.path.join(path, '*junit-report.xml') ):
                   print infile
             displayName: 'Print Hello World'
