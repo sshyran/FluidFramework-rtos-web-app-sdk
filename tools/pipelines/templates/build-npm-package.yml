@@ -240,7 +240,7 @@ stages:
           displayName: Test Parse Script
           inputs:
             script: node testFunction.js
-            workingDir: tools/helper
+            workingDirectory: tools/helper
 
         - ${{ if ne(convertToJson(parameters.taskTest), '[]') }}:
           # Set variable startTest if the build succeed so that we can run all the test tasks whether they are failed or not
