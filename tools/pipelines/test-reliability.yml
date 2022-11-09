@@ -67,7 +67,6 @@ variables:
   # running terminal.  The log output shown in Azure DevOps job runs only has
   # basic ANSI color support though, so force that in the pipeline
 - name: stageNames
-  type: object
   value:
   - Test1
   - Test2
