@@ -40,6 +40,9 @@ trigger:
     - release/*
   paths:
     include:
+    - packages
+    - package.json
+    - package-lock.json
     - azure
     - tools/pipelines/build-azure.yml
     - tools/pipelines/templates/build-npm-package.yml
