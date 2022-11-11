@@ -308,6 +308,14 @@ stages:
               mergeTestResults: false
             condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
 
+
+          # test script
+          - task: CmdLine@2
+            displayName: Print Published Reports File Names
+            inputs:
+              script: node printReports.js ${{ parameters.buildDirectory }}/nyc
+              workingDirectory: tools/helper
+
           # Test - Upload results
           # - task: PublishTestResults@2
           #   displayName: Publish Reports
