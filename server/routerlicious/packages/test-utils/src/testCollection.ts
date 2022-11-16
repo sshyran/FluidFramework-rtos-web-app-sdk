@@ -77,8 +77,12 @@ export class TestCollection implements ICollection<any> {
 
     public async findAndUpdate(query: any, value: any): Promise<{ value: any; existing: boolean; }> {
         const existingValue = this.findOneInternal(query);
-        _.extend(existingValue, value);
-        return { value: existingValue, existing: existingValue };
+        if (!existingValue) {
+            return { value: existingValue, existing: false };
+        }
+        this.removeOneInternal(existingValue);
+        this.insertOneInternal(value)
+        return { value: existingValue, existing: true };
     }
 
     public async insertMany(values: any[], ordered: boolean): Promise<void> {
