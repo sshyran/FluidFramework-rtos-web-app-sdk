@@ -126,7 +126,7 @@ async function updateExistingSession(
         }
     }
 
-    let updatedSession: ISession = {
+    const updatedSession: ISession = {
         ordererUrl: updatedOrdererUrl ?? existingSession.ordererUrl,
         historianUrl: updatedHistorianUrl ?? existingSession.historianUrl,
         deltaStreamUrl: updatedDeltaStreamUrl ?? existingSession.deltaStreamUrl,
@@ -136,11 +136,7 @@ async function updateExistingSession(
         isSessionActive: false,
     };
     try {
-        Lumberjack.info(
-            `Updating the Session ${JSON.stringify(updatedSession)} into the documents collection`,
-            lumberjackProperties,
-        );
-        await documentsCollection.upsert(
+        const result = await documentsCollection.findAndUpdate(
             {
                 documentId,
                 "session.isSessionAlive": false,
@@ -153,27 +149,21 @@ async function updateExistingSession(
                 scribe: updatedScribe ?? document.scribe,
                 tenantId: document.tenantId,
                 version: document.version,
-            },
-            {});
-        const lastestDocument = await documentsCollection.findOne({ documentId });
+            });
         Lumberjack.info(
-            `The latest document: ${JSON.stringify(lastestDocument)} from the documents collection`,
+            `The existing document: ${result} in the documents collection in updateExistingSession`,
             lumberjackProperties,
         );
-
-        if (!lastestDocument || !lastestDocument.session) {
-            throw new Error(`The latest document with error: ${JSON.stringify(lastestDocument)} from the documents collection`);
-        }
-        // If the document with isSessionAlive as false. It means this session has not been discovered.
-        // Thus, let it call getSession for maximum three times.
-        if (!lastestDocument.session.isSessionAlive && count === 3) {
+        // There is no document with isSessionAlive as false. It means this session has been discovered by
+        // another call, and there is a race condition with different clients writing truth into the cosmosdb
+        // from different clusters. Thus, let it call getSession for maximum three times.
+        if (!result.existing && count === 3) {
             Lumberjack.error(`The documentId: ${documentId} reaches three times for calling getSession`,
                 lumberjackProperties);
             throw new Error(`The documentId: ${documentId} reaches three times for calling getSession`);
-        }
-        if (!lastestDocument.session.isSessionAlive && count < 3) {
+        } else if (!result.existing && count < 3) {
             Lumberjack.info(
-                `The documentId: ${documentId} with isSessionAlive as false needs calling getSession again`,
+                `The documentId: ${documentId} with isSessionAlive as false was not found in documents collection`,
                 lumberjackProperties,
             );
             return getSession(ordererUrl,
@@ -184,9 +174,12 @@ async function updateExistingSession(
                 documentsCollection,
                 sessionStickinessDurationMs,
                 count + 1);
+        } else {
+            Lumberjack.info(
+                `The Session ${JSON.stringify(updatedSession)} was updated into the documents collection`,
+                lumberjackProperties,
+            );
         }
-
-        updatedSession = lastestDocument.session;
     } catch (error) {
         Lumberjack.error("Error persisting update to existing document session", lumberjackProperties, error);
         throw new NetworkError(500, "Failed to persist update to document session");
