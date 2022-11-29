@@ -308,13 +308,20 @@ stages:
               mergeTestResults: false
             condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
 
+          - task: CopyFiles@2
+            displayName: Copy Test Results
+            inputs:
+              SourceFolder: ${{ parameters.buildDirectory }}/nyc
+              Contents: '**/*junit-report.xml'
+              TargetFolder: 'testresults'
+
 
           # test script
-          - task: CmdLine@2
-            displayName: Print Published Reports File Names
-            inputs:
-              script: node printReports.js ${{ parameters.buildDirectory }}/nyc
-              workingDirectory: tools/helper
+          # - task: CmdLine@2
+          #   displayName: Print Published Reports File Names
+          #   inputs:
+          #     script: node printReports.js ${{ parameters.buildDirectory }}/nyc
+          #     workingDirectory: tools/helper
 
           # Test - Upload results
           # - task: PublishTestResults@2
