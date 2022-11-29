@@ -317,7 +317,7 @@ stages:
             inputs:
               SourceFolder: ${{ parameters.buildDirectory }}/nyc
               Contents: '**/*junit-report.xml'
-              TargetFolder: ${{ Build.ArtifactStagingDirectory }}
+              TargetFolder: '$(Build.ArtifactStagingDirectory)/testFiles'
 
 
           # test script
