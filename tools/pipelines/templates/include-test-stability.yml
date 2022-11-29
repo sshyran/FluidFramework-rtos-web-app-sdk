@@ -11,10 +11,6 @@ parameters:
   type: string
   default: ci:build
 
-- name: taskBuildDocs
-  type: boolean
-  default: false
-
 - name: taskLint
   type: boolean
   default: true
@@ -55,8 +51,6 @@ jobs:
     variables:
       testCoverage: ${{ ne(variables['Build.Reason'], 'PullRequest') }}
       releaseBuildVar: $[variables.releaseBuild]
-      ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
-        targetBranchName: $(System.PullRequest.TargetBranch)"
     timeoutInMinutes: ${{ parameters.timeoutInMinutes }}
     steps:
     # Setup
@@ -82,7 +76,6 @@ jobs:
             Build=${{ parameters.taskBuild }}
             Lint=${{ parameters.taskLint }}
             Test=${{ convertToJson(parameters.taskTest) }}
-            BuildDoc=${{ parameters.taskBuildDocs }}
             TestCoverage=$(testCoverage)
           "
 

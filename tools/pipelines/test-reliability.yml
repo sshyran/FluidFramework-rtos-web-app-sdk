@@ -13,17 +13,16 @@ parameters:
   type: object
   default: Large
 
-- name: buildDirectory
-  type: string
-  default: .
+- name: stageNames
+  type: object
+  default:
+  - Test1
+  - Test2
+  - Test3
 
 - name: taskBuild
   type: string
   default: ci:build
-
-- name: taskLint
-  type: boolean
-  default: false
 
 - name: taskTest
   type: object
@@ -48,10 +47,6 @@ parameters:
   type: string
   default: TestStability
 
-- name: includeInternalVersions
-  type: boolean
-  default: false
-
 schedules:
   - cron: "00 03 * * SUN"
     displayName: Scheduled Tests weekly at Saturday night
@@ -66,13 +61,11 @@ variables:
   # We use 'chalk' to colorize output, which auto-detects color support in the
   # running terminal.  The log output shown in Azure DevOps job runs only has
   # basic ANSI color support though, so force that in the pipeline
-- name: stageNames
-  value:
-  - Test1
-  - Test2
+- name: FORCE_COLOR
+  value: 1
 
 stages:
-  - ${{ each stageName in variables.stageNames }}:
+  - ${{ each stageName in parameters.stageNames }}:
     - stage:
       displayName: ${{ stageName }}
       dependsOn: []
@@ -82,13 +75,8 @@ stages:
           buildToolsVersionToInstall: ${{ parameters.buildToolsVersionToInstall }}
           buildDirectory: .
           tagName: ${{ parameters.tagName }}
-          poolBuild: Large
-          checkoutSubmodules: true
+          poolBuild: ${{ parameters.poolBuild }}
+          checkoutSubmodules: ${{ parameters.checkoutSubmodules }}
           timeoutInMinutes: 360
-          taskTest:
-          - ci:test:mocha
-          - ci:test:jest
-          - ci:test:realsvc:local
-          - ci:test:realsvc:tinylicious
-          - ci:test:stress:tinylicious
-          - test:copyresults
+          taskBuild : ${{ parameters.taskBuild }}
+          taskTest: ${{ parameters.taskTest }}
