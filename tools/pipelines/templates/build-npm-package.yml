@@ -320,7 +320,7 @@ stages:
               TargetFolder: '$(Build.ArtifactStagingDirectory)/testFiles'
 
 
-          test script
+          #test script
           - task: CmdLine@2
             displayName: Print Published Reports File Names
             inputs:
