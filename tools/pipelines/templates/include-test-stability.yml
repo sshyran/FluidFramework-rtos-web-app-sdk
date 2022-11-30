@@ -28,17 +28,6 @@ parameters:
   type: boolean
   default: false
 
-- name: buildNumberInPatch
-  type: string
-  default:
-
-- name: tagName
-  type: string
-
-- name: buildToolsVersionToInstall
-  type: string
-  default: repo
-
 - name: timeoutInMinutes
   type: number
   default: 60

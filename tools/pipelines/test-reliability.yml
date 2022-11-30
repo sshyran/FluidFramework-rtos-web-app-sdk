@@ -38,15 +38,6 @@ parameters:
   type: boolean
   default: true
 
-- name: buildToolsVersionToInstall
-  displayName: Fluid build tools version (default = installs version in repo)
-  type: string
-  default: repo
-
-- name: tagName
-  type: string
-  default: TestStability
-
 schedules:
   - cron: "00 03 * * SUN"
     displayName: Scheduled Tests weekly at Saturday night
@@ -72,9 +63,7 @@ stages:
       jobs:
       - template: templates/include-test-stability.yml
         parameters:
-          buildToolsVersionToInstall: ${{ parameters.buildToolsVersionToInstall }}
           buildDirectory: .
-          tagName: ${{ parameters.tagName }}
           poolBuild: ${{ parameters.poolBuild }}
           checkoutSubmodules: ${{ parameters.checkoutSubmodules }}
           timeoutInMinutes: 360
