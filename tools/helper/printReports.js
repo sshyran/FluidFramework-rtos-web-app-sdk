@@ -1,26 +1,34 @@
 import * as fs from "fs";
-import * as glob from "glob";
+import * as path from "path";
 
 var directory = process.argv.slice(2)[0];
 
-const printFiles = () => {
-    var files = fs.readdirSync(directory);
-    console.log(files)
+let files  = [];
 
-    files.forEach(file => {
-        getDirectories(file, function (err, res) {
-            if (err) {
-              console.log('Error', err);
-            } else {
-              console.log(res);
-            }
-          });
-    })
-}
+const getFilesRecursively = (directory) => {
+    const filesInDirectory = fs.readdirSync(directory);
+    for (const file of filesInDirectory) {
+      const absolute = path.join(directory, file);
+      if (fs.statSync(absolute).isDirectory()) {
+          getFilesRecursively(absolute);
+      } else if (/junit-report.xml$/.test(absolute)) {
+          files.push(absolute);
+      }
+    }
+  }
 
+// const printFiles = () => {
+//     var files = fs.readdirSync(directory);
+//     console.log(files)
 
-var getDirectories = function (src, callback) {
-  glob(src + '/**/*', callback);
-};
+//     files.forEach(file => {
+//         const filePath = "C:/Users/michaelzhen/Documents/GitHub/microsoftFluidFramework/tools/" + file;
+//         if(fs.statSync(filePath).isDirectory()){
+//             getFilesRecursively(filePath);
+//         }
+//     })
+// }
 
-printFiles();
+getFilesRecursively(directory);
+
+console.log(files)
