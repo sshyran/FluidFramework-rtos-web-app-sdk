@@ -92,14 +92,6 @@ jobs:
         customCommand: 'ci --unsafe-perm'
         customRegistry: 'useNpmrc'
 
-    # Set version
-    - template: include-set-package-version.yml
-      parameters:
-        buildDirectory: ${{ parameters.buildDirectory }}
-        buildNumberInPatch: ${{ parameters.buildNumberInPatch }}
-        buildToolsVersionToInstall: ${{ parameters.buildToolsVersionToInstall }}
-        tagName: ${{ parameters.tagName }}
-
     # Build
     - ${{ if ne(parameters.taskBuild, 'false') }}:
       - task: Npm@1
