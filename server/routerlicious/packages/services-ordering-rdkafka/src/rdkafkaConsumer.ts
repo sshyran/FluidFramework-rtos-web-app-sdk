@@ -105,15 +105,18 @@ export class RdkafkaConsumer extends RdkafkaBase implements IConsumer {
 			"client.id": this.clientId,
 			"group.id": this.groupId,
 			"enable.auto.commit": false,
-			"fetch.min.bytes": 1,
-			"fetch.max.bytes": 1024 * 1024,
 			"offset_commit_cb": true,
 			"rebalance_cb": this.consumerOptions.optimizedRebalance ? this.rebalance.bind(this) : true,
             "security.protocol": "sasl_ssl",
             "sasl.mechanisms": "PLAIN",
             "sasl.username": "$ConnectionString",
             "sasl.password": "Endpoint=sb://frs-dev2-eventhubs-centralus-001.servicebus.windows.net/;SharedAccessKeyName=ConsoleTest;SharedAccessKey=do+DcZCMEqO01/AFxFsJmRt+2Ffv2tD9gh4uvcH95fs=",
-			...this.consumerOptions.additionalOptions
+            "connections.max.idle.ms": (4 * 60 - 10) * 1000,
+            "topic.metadata.refresh.interval.ms": (4 * 60 - 30) * 1000,
+            "metadata.max.age.ms": 180000,
+            "fetch.min.bytes": 1,
+            "fetch.max.bytes": 52428800,
+            "fetch.wait.max.ms": 5000,
 		};
 
 		const consumer: kafkaTypes.KafkaConsumer = this.consumer =

@@ -122,7 +122,10 @@ export class RdkafkaProducer extends RdkafkaBase implements IProducer {
             "sasl.mechanisms": "PLAIN",
             "sasl.username": "$ConnectionString",
             "sasl.password": "Endpoint=sb://frs-dev2-eventhubs-centralus-001.servicebus.windows.net/;SharedAccessKeyName=ConsoleTest;SharedAccessKey=do+DcZCMEqO01/AFxFsJmRt+2Ffv2tD9gh4uvcH95fs=",
-			...this.producerOptions.additionalOptions,
+            "connections.max.idle.ms": (4 * 60 - 10) * 1000,
+            "topic.metadata.refresh.interval.ms": (4 * 60 - 30) * 1000,
+            "metadata.max.age.ms": 180000,
+            "request.timeout.ms": 60000,
 		};
 
 		const producer: kafkaTypes.Producer = this.connectingProducer =
