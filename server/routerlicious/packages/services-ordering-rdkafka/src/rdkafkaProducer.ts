@@ -125,11 +125,10 @@ export class RdkafkaProducer extends RdkafkaBase implements IProducer {
             "connections.max.idle.ms": (4 * 60 - 10) * 1000,
             "topic.metadata.refresh.interval.ms": (4 * 60 - 30) * 1000,
             "metadata.max.age.ms": 180000,
-            "request.timeout.ms": 60000,
 		};
 
 		const producer: kafkaTypes.Producer = this.connectingProducer =
-			new this.kafka.HighLevelProducer(options, this.producerOptions.topicConfig);
+			new this.kafka.HighLevelProducer(options, {"request.timeout.ms": 60000,});
 
 		producer.on("ready", () => {
 			this.connectedProducer = producer;
