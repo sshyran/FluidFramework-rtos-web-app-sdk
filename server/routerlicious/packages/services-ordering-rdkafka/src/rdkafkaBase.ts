@@ -67,7 +67,7 @@ export abstract class RdkafkaBase extends EventEmitter {
             this.sslOptions = {
                 'security.protocol': 'sasl_ssl',
                 'sasl.mechanisms': 'PLAIN',
-                'sasl.username': '$ConnectionString', //do not replace $ConnectionString
+                'sasl.username': '$ConnectionString',
                 'sasl.password': 'Endpoint=sb://frs-dev2-eventhubs-centralus-001.servicebus.windows.net/;SharedAccessKeyName=ConsoleTest;SharedAccessKey=do+DcZCMEqO01/AFxFsJmRt+2Ffv2tD9gh4uvcH95fs='
             };
         }
