@@ -239,13 +239,6 @@ stages:
               workingDir: ${{ parameters.buildDirectory }}
               customCommand: 'run lint'
 
-        # test script
-        - task: CmdLine@2
-          displayName: Test Parse Script
-          inputs:
-            script: node testFunction.js
-            workingDirectory: tools/helper
-
         - ${{ if ne(convertToJson(parameters.taskTest), '[]') }}:
           # Set variable startTest if the build succeed so that we can run all the test tasks whether they are failed or not
           - script: |
@@ -319,13 +312,19 @@ stages:
               Contents: '**/*junit-report.xml'
               TargetFolder: '$(Build.ArtifactStagingDirectory)/testFiles'
 
-
           #test script
           - task: CmdLine@2
             displayName: Print Published Reports File Names
             inputs:
               script: node printReports.js '$(Build.ArtifactStagingDirectory)/testFiles'
               workingDirectory: tools/helper
+
+          # # test script
+          # - task: CmdLine@2
+          #   displayName: Test Parse Script
+          #   inputs:
+          #     script: node testFunction.js
+          #     workingDirectory: tools/helper
 
           # Test - Upload results
           # - task: PublishTestResults@2
