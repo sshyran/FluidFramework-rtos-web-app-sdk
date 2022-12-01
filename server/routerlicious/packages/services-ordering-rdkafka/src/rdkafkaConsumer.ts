@@ -109,8 +109,11 @@ export class RdkafkaConsumer extends RdkafkaBase implements IConsumer {
 			"fetch.max.bytes": 1024 * 1024,
 			"offset_commit_cb": true,
 			"rebalance_cb": this.consumerOptions.optimizedRebalance ? this.rebalance.bind(this) : true,
-			...this.consumerOptions.additionalOptions,
-			...this.sslOptions,
+            "security.protocol": "sasl_ssl",
+            "sasl.mechanisms": "PLAIN",
+            "sasl.username": "$ConnectionString",
+            "sasl.password": "Endpoint=sb://frs-dev2-eventhubs-centralus-001.servicebus.windows.net/;SharedAccessKeyName=ConsoleTest;SharedAccessKey=do+DcZCMEqO01/AFxFsJmRt+2Ffv2tD9gh4uvcH95fs=",
+			...this.consumerOptions.additionalOptions
 		};
 
 		const consumer: kafkaTypes.KafkaConsumer = this.consumer =

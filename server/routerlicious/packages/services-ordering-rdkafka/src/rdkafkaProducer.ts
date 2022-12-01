@@ -118,8 +118,11 @@ export class RdkafkaProducer extends RdkafkaBase implements IProducer {
 			"queue.buffering.max.messages": 100000,
 			"queue.buffering.max.ms": 0.5,
 			"batch.num.messages": 10000,
+            "security.protocol": "sasl_ssl",
+            "sasl.mechanisms": "PLAIN",
+            "sasl.username": "$ConnectionString",
+            "sasl.password": "Endpoint=sb://frs-dev2-eventhubs-centralus-001.servicebus.windows.net/;SharedAccessKeyName=ConsoleTest;SharedAccessKey=do+DcZCMEqO01/AFxFsJmRt+2Ffv2tD9gh4uvcH95fs=",
 			...this.producerOptions.additionalOptions,
-			...this.sslOptions,
 		};
 
 		const producer: kafkaTypes.Producer = this.connectingProducer =
