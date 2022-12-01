@@ -99,7 +99,7 @@ export class RdkafkaConsumer extends RdkafkaBase implements IConsumer {
 		}
 
 		const options: kafkaTypes.ConsumerGlobalConfig = {
-			"metadata.broker.list": this.endpoints.kafka.join(","),
+			"metadata.broker.list": 'frs-dev2-eventhubs-centralus-001.servicebus.windows.net:9093',
 			"socket.keepalive.enable": true,
 			"socket.nagle.disable": true,
 			"client.id": this.clientId,
