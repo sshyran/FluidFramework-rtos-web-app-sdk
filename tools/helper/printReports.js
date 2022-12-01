@@ -20,12 +20,13 @@ const getFilesRecursively = (directory) => {
 
 getFilesRecursively(directory);
 
-console.log(files)
+// console.log(files)
 
 const parseTestReport = (filename) => {
     fs.readFile(filename,  'utf8', (err, data) => {
         let failedTests;
         parser.parseString(data, { mergeAttrs: true }, (err, res) => {
+            console.log("READ FILE RESULTS: ", res)
             failedTests = findFailedTests(res);
         })
 
@@ -50,5 +51,7 @@ const findFailedTests = (obj) => {
 };
 
 files.forEach((filename) => {
+    console.log(filename)
+    console.log(typeof(filename))
     parseTestReport(filename);
 })
