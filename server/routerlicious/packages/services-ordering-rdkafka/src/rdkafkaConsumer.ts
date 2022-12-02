@@ -117,7 +117,7 @@ export class RdkafkaConsumer extends RdkafkaBase implements IConsumer {
             "fetch.min.bytes": 1,
             "fetch.max.bytes": 52428800,
             "fetch.wait.max.ms": 5000,
-            "session.timeout.ms": 30000,
+            "session.timeout.ms": 60000,
         };
 
 		const consumer: kafkaTypes.KafkaConsumer = this.consumer =
