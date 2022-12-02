@@ -106,7 +106,7 @@ export class RdkafkaConsumer extends RdkafkaBase implements IConsumer {
 			"group.id": this.groupId,
 			"enable.auto.commit": false,
 			"offset_commit_cb": true,
-			"rebalance_cb": this.consumerOptions.optimizedRebalance ? this.rebalance.bind(this) : true,
+			"rebalance_cb": true,
             "security.protocol": "sasl_ssl",
             "sasl.mechanisms": "PLAIN",
             "sasl.username": "$ConnectionString",
