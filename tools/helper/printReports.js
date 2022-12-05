@@ -20,13 +20,11 @@ const getFilesRecursively = (directory) => {
 
 getFilesRecursively(directory);
 
-// console.log(files)
-
 const parseTestReport = (filename) => {
     fs.readFile(filename,  'utf8', (err, data) => {
         let failedTests;
         parser.parseString(data, { mergeAttrs: true }, (err, res) => {
-            console.log("READ FILE RESULTS: ", res)
+            // console.log("READ FILE RESULTS: ", res)
             failedTests = findFailedTests(res);
         })
 
@@ -40,15 +38,9 @@ const parseTestReport = (filename) => {
 }
 
 const findFailedTests = (obj) => {
-    // console.log("check if has testsuites", (obj).hasOwnProperty('testsuites'));
-
-    // if ((obj).hasOwnProperty('testsuites')){
-    //     console.log("HAS TEST SUITE", obj.testsuites.testsuite)
-    // }
-
     let testCases = [];
 
-if((obj).hasOwnProperty('testsuites')){                             //check for test with multiple test suites
+    if((obj).hasOwnProperty('testsuites')){                             //check for test with multiple test suites
         if((obj.testsuites).hasOwnProperty('testsuite')){           //check for test suites with no tests
             let testSuites = obj.testsuites.testsuite;
             testSuites.forEach((test) => {
@@ -57,6 +49,18 @@ if((obj).hasOwnProperty('testsuites')){                             //check for 
         }
     } else if((obj).hasOwnProperty('testsuite')){                   //check for single test suite
         testCases = obj.testsuite.testcase;
+    }
+
+    if(!testCases) {
+        console.log("NO TEST CASE FOUND", obj)
+        if((obj).hasOwnProperty('testsuites')){
+            console.log("TL1: ", obj.testsuites)
+            if((obj.testsuites).hasOwnProperty('testsuite')){
+                console.log("TL2: ", obj.testsuites.testsuite)
+            }
+        } else if((obj).hasOwnProperty('testsuite')){
+            console.log("TL3: ", obj.testsuite)
+        }
     }
 
     if (testCases.length !== 0) {
