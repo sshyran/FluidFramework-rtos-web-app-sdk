@@ -48,12 +48,14 @@ const findFailedTests = (obj) => {
 
     let testCases = [];
 
-    if((obj).hasOwnProperty('testsuites')){
-        let testSuites = obj.testsuites.testsuite;
-        testSuites.forEach((test) => {
-            testCases = testCases.concat(test.testcase)
-        })
-    } else {
+if((obj).hasOwnProperty('testsuites')){                             //check for test with multiple test suites
+        if((obj.testsuites).hasOwnProperty('testsuite')){           //check for test suites with no tests
+            let testSuites = obj.testsuites.testsuite;
+            testSuites.forEach((test) => {
+                testCases = testCases.concat(test.testcase)
+            })
+        }
+    } else if((obj).hasOwnProperty('testsuite')){                   //check for single test suite
         testCases = obj.testsuite.testcase;
     }
 
