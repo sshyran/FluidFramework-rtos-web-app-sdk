@@ -41,17 +41,26 @@ const parseTestReport = (filename) => {
 }
 
 const findFailedTests = (obj) => {
-    console.log("check if has testsuite", (obj.testsuite).hasOwnProperty('testsuite'));
-    console.log("check if has testcase", (obj.testsuite).hasOwnProperty('testcase'));
+    console.log("check if has testsuites", (obj).hasOwnProperty('testsuites'));
 
-    if ((obj.testsuite).hasOwnProperty('testsuite')){
-        console.log("HAS TEST SUITE", obj.testsuite.testsuite)
+    if ((obj).hasOwnProperty('testsuites')){
+        console.log("HAS TEST SUITE", obj.testsuites.testsuite)
     }
 
-    const arr = obj.testsuite.testcase;
+    let testCases;
 
-    if (arr.length !== 0) {
-        const result = arr.filter((el) => {
+    if((obj).hasOwnProperty('testsuites')){
+        let testSuites = obj.testsuites.testsuite;
+        testSuites.forEach((test) => {
+            testCases.push(test)
+        })
+    } else {
+        testCases = obj.testsuite.testcase;
+        console.log("ONE TEST SUITE", testCases)
+    }
+
+    if (testCases.length !== 0) {
+        const result = testCases.filter((el) => {
             return el.failure !== undefined;
         });
         return (result.length !== 0) ? result : undefined;
