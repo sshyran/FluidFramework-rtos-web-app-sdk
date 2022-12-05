@@ -40,14 +40,14 @@ const parseTestReport = (filename) => {
 const findFailedTests = (obj) => {
     let testCases = [];
 
-    if((obj).hasOwnProperty('testsuites')){                             //check for test with multiple test suites
-        if((obj.testsuites).hasOwnProperty('testsuite')){           //check for test suites with no tests
-            let testSuites = obj.testsuites.testsuite;
-            testSuites.forEach((test) => {
+    if((obj).hasOwnProperty('testsuites') && (obj.testsuites).hasOwnProperty('testsuite')){         //check for test with multiple test suites
+        let testSuites = obj.testsuites.testsuite;
+        testSuites.forEach((test) => {
+            if((test).hasOwnProperty('testcase')){
                 testCases = testCases.concat(test.testcase)
-            })
-        }
-    } else if((obj).hasOwnProperty('testsuite')){                   //check for single test suite
+            }
+        })
+    } else if((obj).hasOwnProperty('testsuite') && (obj.testsuite).hasOwnProperty('testcase')){     //check for single test suite
         testCases = obj.testsuite.testcase;
     }
 
