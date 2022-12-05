@@ -1,4 +1,3 @@
-import { ConsoleMessageId } from "@microsoft/api-extractor";
 import * as fs from "fs";
 import * as path from "path";
 import * as parser from "xml2js";
