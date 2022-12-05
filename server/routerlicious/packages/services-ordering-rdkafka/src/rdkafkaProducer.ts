@@ -110,7 +110,7 @@ export class RdkafkaProducer extends RdkafkaBase implements IProducer {
 		}
 
 		const options: kafkaTypes.ProducerGlobalConfig = {
-			"metadata.broker.list": 'frs-dev2-eventhubs-centralus-001.servicebus.windows.net:9093',
+			"metadata.broker.list": 'frs-dev2-eventhubs-centralus-002.servicebus.windows.net:9093',
 			"socket.keepalive.enable": true,
 			"socket.nagle.disable": true,
 			"client.id": this.clientId,
@@ -121,7 +121,7 @@ export class RdkafkaProducer extends RdkafkaBase implements IProducer {
             "security.protocol": "sasl_ssl",
             "sasl.mechanisms": "PLAIN",
             "sasl.username": "$ConnectionString",
-            "sasl.password": "Endpoint=sb://frs-dev2-eventhubs-centralus-001.servicebus.windows.net/;SharedAccessKeyName=ConsoleTest;SharedAccessKey=do+DcZCMEqO01/AFxFsJmRt+2Ffv2tD9gh4uvcH95fs=",
+            "sasl.password": 'Endpoint=sb://frs-dev2-eventhubs-centralus-002.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=8Ir2rFHtveflgC6mtRNnmR4u+JmoYpK1HPJVe1mFAJ0=',
             "connections.max.idle.ms": (4 * 60 - 10) * 1000,
             "topic.metadata.refresh.interval.ms": (4 * 60 - 30) * 1000,
             "metadata.max.age.ms": 180000,
