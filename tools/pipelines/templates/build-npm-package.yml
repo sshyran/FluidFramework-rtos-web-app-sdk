@@ -311,6 +311,7 @@ stages:
               SourceFolder: ${{ parameters.buildDirectory }}/nyc
               Contents: '**/*junit-report.xml'
               TargetFolder: '$(Build.ArtifactStagingDirectory)/testFiles'
+            condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
 
           #test script
           - task: CmdLine@2
@@ -318,6 +319,7 @@ stages:
             inputs:
               script: node printReports.js '$(Build.ArtifactStagingDirectory)/testFiles'
               workingDirectory: tools/helper
+            condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
 
           # # test script
           # - task: CmdLine@2
