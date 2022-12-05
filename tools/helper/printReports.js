@@ -23,6 +23,7 @@ getFilesRecursively(directory);
 // console.log(files)
 
 const parseTestReport = (filename) => {
+    console.log("FILE NAME: ", filename)
     fs.readFile(filename,  'utf8', (err, data) => {
         let failedTests;
         parser.parseString(data, { mergeAttrs: true }, (err, res) => {
@@ -40,6 +41,15 @@ const parseTestReport = (filename) => {
 }
 
 const findFailedTests = (obj) => {
+    const testsuiteObj = obj.testsuite;
+
+    console.log("check if has testsuite", Object.hasOwn(testsuiteObj, 'testsuite'));
+    console.log("check if has testcase", Object.hasOwn(testsuiteObj, 'testcase'));
+
+    if (Object.hasOwn(testsuiteObj, 'testsuite')){
+        console.log("HAS TEST SUTIE", obj.testsuite.testsuite)
+    }
+
     const arr = obj.testsuite.testcase;
 
     if (arr.length !== 0) {
