@@ -41,13 +41,11 @@ const parseTestReport = (filename) => {
 }
 
 const findFailedTests = (obj) => {
-    const testsuiteObj = obj.testsuite;
+    console.log("check if has testsuite", (obj.testsuite).hasOwnProperty('testsuite'));
+    console.log("check if has testcase", (obj.testsuite).hasOwnProperty('testcase'));
 
-    console.log("check if has testsuite", Object.hasOwn(testsuiteObj, 'testsuite'));
-    console.log("check if has testcase", Object.hasOwn(testsuiteObj, 'testcase'));
-
-    if (Object.hasOwn(testsuiteObj, 'testsuite')){
-        console.log("HAS TEST SUTIE", obj.testsuite.testsuite)
+    if ((obj.testsuite).hasOwnProperty('testsuite')){
+        console.log("HAS TEST SUITE", obj.testsuite.testsuite)
     }
 
     const arr = obj.testsuite.testcase;
