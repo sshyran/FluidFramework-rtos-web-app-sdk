@@ -1,3 +1,4 @@
+import { ConsoleMessageId } from "@microsoft/api-extractor";
 import * as fs from "fs";
 import * as path from "path";
 import * as parser from "xml2js";
@@ -28,7 +29,9 @@ const parseTestReport = (filename) => {
             failedTests = findFailedTests(res);
         })
 
+        console.log("failed tests", failedTests)
         failedTests?.forEach((test) => {
+            console.log("PRINT FAILED TESTS:")
             console.log(test.name[0])
             console.log(test.failure[0]);
         });
@@ -51,18 +54,6 @@ const findFailedTests = (obj) => {
         testCases = obj.testsuite.testcase;
     }
 
-    if(!testCases) {
-        console.log("NO TEST CASE FOUND", obj)
-        if((obj).hasOwnProperty('testsuites')){
-            console.log("TL1: ", obj.testsuites)
-            if((obj.testsuites).hasOwnProperty('testsuite')){
-                console.log("TL2: ", obj.testsuites.testsuite)
-            }
-        } else if((obj).hasOwnProperty('testsuite')){
-            console.log("TL3: ", obj.testsuite)
-        }
-    }
-
     if (testCases.length !== 0) {
         const result = testCases.filter((el) => {
             return el.failure !== undefined;
@@ -72,7 +63,6 @@ const findFailedTests = (obj) => {
 };
 
 files.forEach((filename) => {
-    console.log(filename)
-    console.log(typeof(filename))
+    // console.log(filename)
     parseTestReport(filename);
 })
