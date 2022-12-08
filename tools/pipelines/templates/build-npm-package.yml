@@ -216,6 +216,7 @@ stages:
         - task: Bash@3
           displayName: Test error printing
           inputs:
+            targetType: inline
             script: |
               output=$(node testFunction.js)
               echo "$output"
