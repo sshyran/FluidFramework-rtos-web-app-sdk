@@ -217,7 +217,7 @@ stages:
           displayName: Test error printing
           inputs:
             script: |
-              output=$(node testFunction.js));
+              output=$(node testFunction.js);
               echo "##[error] $output";
             workingDirectory: tools/helper
 
@@ -326,7 +326,7 @@ stages:
             displayName: Print Published Reports File Names
             inputs:
               script: |
-                output=$(node printReports.js '$(Build.ArtifactStagingDirectory)/testFiles'));
+                output=$(node printReports.js '$(Build.ArtifactStagingDirectory)/testFiles');
                 echo "##[error] $output";
               workingDirectory: tools/helper
             condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
