@@ -17,11 +17,11 @@ const parseTestReport = () => {
             failedTests = findFailedTests(res);
         })
 
-        // failedTests?.forEach((test) => {
-        //     console.log(test.name[0])
-        //     console.log(test.failure[0]);
-        // });
-        console.log(failedTests)
+        failedTests?.forEach((test) => {
+            // console.log(test.name[0])
+            // console.log(test.failure[0]);
+            console.log(test)
+        });
         return failedTests;
     });
 }
