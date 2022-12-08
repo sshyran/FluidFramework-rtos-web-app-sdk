@@ -213,17 +213,17 @@ stages:
             script: |
               ${{ parameters.packageManagerInstallCommand }}
 
-        - task: Bash@3
-          displayName: Test error printing
-          inputs:
-            targetType: inline
-            script: |
-              exec 3< <(node testFunction.js);
-              lines=();
-              while read -r; do lines+=("$REPLY"); done <&3;
-              exec 3<&-;
-              echo "##[error] ${lines[@]}";
-            workingDirectory: tools/helper
+        # - task: Bash@3
+        #   displayName: Test error printing
+        #   inputs:
+        #     targetType: inline
+        #     script: |
+        #       exec 3< <(node testFunction.js);
+        #       lines=();
+        #       while read -r; do lines+=("$REPLY"); done <&3;
+        #       exec 3<&-;
+        #       echo "##[error] ${lines[@]}";
+        #     workingDirectory: tools/helper
 
         # Set version
         - template: include-set-package-version.yml
@@ -326,30 +326,13 @@ stages:
             condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
 
           #test script
-          - task: CmdLine@2
-            displayName: Print Published Reports File Names
-            inputs:
-              script: |
-                output=$(node printReports.js '$(Build.ArtifactStagingDirectory)/testFiles');
-                echo ##[error] $output;
-              workingDirectory: tools/helper
-            condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
-
-          # # test script
           # - task: CmdLine@2
-          #   displayName: Test Parse Script
+          #   displayName: Print Published Reports File Names
           #   inputs:
-          #     script: node testFunction.js
+          #     script: |
+          #       output=$(node printReports.js '$(Build.ArtifactStagingDirectory)/testFiles');
+          #       echo ##[error] $output;
           #     workingDirectory: tools/helper
-
-          # Test - Upload results
-          # - task: PublishTestResults@2
-          #   displayName: Publish Reports
-          #   inputs:
-          #     testResultsFormat: 'JUnit'
-          #     testResultsFiles: '**/*junit-report.xml'
-          #     searchFolder: $(System.DefaultWorkingDirectory)
-          #     mergeTestResults: false
           #   condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
 
           # Print Hello World
