@@ -218,13 +218,11 @@ stages:
           inputs:
             targetType: inline
             script: |
-              output=$(node testFunction.js)
-              echo "[error] $output"
-              echo "[error] testline"
-              for n in $output
-              do
-                echo "##[error] $n"
-              done
+              exec 3< <(node testFunction.js);
+              lines=();
+              while read -r; do lines+=("$REPLY"); done <&3;
+              exec 3<&-;
+              echo "##[error] ${lines[@]}";
             workingDirectory: tools/helper
 
         # Set version
