@@ -213,6 +213,15 @@ stages:
             script: |
               ${{ parameters.packageManagerInstallCommand }}
 
+        - task: CmdLine@2
+          displayName: Test error printing
+          inputs:
+            script: |
+              output=$(node testFunction.js));
+              echo "##[error] $output";
+            workingDirectory: tools/helper
+          condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
+
         # Set version
         - template: include-set-package-version.yml
           parameters:
