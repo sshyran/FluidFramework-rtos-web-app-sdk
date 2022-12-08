@@ -218,8 +218,7 @@ stages:
           inputs:
             script: |
               output=$(node testFunction.js)
-              echo "##[error] $output"
-
+              echo "$output"
             workingDirectory: tools/helper
 
         # Set version
