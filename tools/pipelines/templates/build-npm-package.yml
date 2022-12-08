@@ -327,7 +327,7 @@ stages:
             inputs:
               script: |
                 output=$(node printReports.js '$(Build.ArtifactStagingDirectory)/testFiles');
-                echo "##[error] $output";
+                echo '##[error] $output';
               workingDirectory: tools/helper
             condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
 
