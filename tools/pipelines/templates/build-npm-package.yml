@@ -213,7 +213,7 @@ stages:
             script: |
               ${{ parameters.packageManagerInstallCommand }}
 
-        - task: CmdLine@2
+        - task: Bash@3
           displayName: Test error printing
           inputs:
             script: |
