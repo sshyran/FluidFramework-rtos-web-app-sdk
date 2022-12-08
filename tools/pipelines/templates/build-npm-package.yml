@@ -317,7 +317,9 @@ stages:
           - task: CmdLine@2
             displayName: Print Published Reports File Names
             inputs:
-              script: node printReports.js '$(Build.ArtifactStagingDirectory)/testFiles'
+              script: |
+                output=$(node printReports.js '$(Build.ArtifactStagingDirectory)/testFiles'));
+                echo "##[error] $output";
               workingDirectory: tools/helper
             condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
 
