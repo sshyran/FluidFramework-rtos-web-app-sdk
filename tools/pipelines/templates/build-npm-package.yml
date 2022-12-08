@@ -220,7 +220,6 @@ stages:
               output=$(node testFunction.js));
               echo "##[error] $output";
             workingDirectory: tools/helper
-          condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
 
         # Set version
         - template: include-set-package-version.yml
