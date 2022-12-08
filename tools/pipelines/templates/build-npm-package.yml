@@ -200,19 +200,6 @@ stages:
                 fi
               fi
 
-        # Install
-        - task: UseNode@1
-          displayName: Use Node 14.x
-          inputs:
-            version: 14.x
-        - task: Bash@3
-          displayName: Install dependencies
-          inputs:
-            targetType: 'inline'
-            workingDirectory: ${{ parameters.buildDirectory }}
-            script: |
-              ${{ parameters.packageManagerInstallCommand }}
-
         - task: Bash@3
           displayName: Test error printing
           inputs:
@@ -226,6 +213,21 @@ stages:
                 echo "##[error] $n"
               done
             workingDirectory: tools/helper
+
+        # Install
+        - task: UseNode@1
+          displayName: Use Node 14.x
+          inputs:
+            version: 14.x
+        - task: Bash@3
+          displayName: Install dependencies
+          inputs:
+            targetType: 'inline'
+            workingDirectory: ${{ parameters.buildDirectory }}
+            script: |
+              ${{ parameters.packageManagerInstallCommand }}
+
+
 
         # Set version
         - template: include-set-package-version.yml

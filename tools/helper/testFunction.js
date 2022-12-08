@@ -21,6 +21,7 @@ const parseTestReport = () => {
         //     console.log(test.name[0])
         //     console.log(test.failure[0]);
         // });
+        console.log(failedTests)
         return failedTests;
     });
 }
