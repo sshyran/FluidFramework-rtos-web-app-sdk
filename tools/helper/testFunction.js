@@ -18,9 +18,10 @@ const parseTestReport = () => {
         })
 
         failedTests?.forEach((test) => {
-            // console.log(test.name[0])
-            // console.log(test.failure[0]);
-            console.log(test)
+            console.log(test.classname[0])
+            console.log(test.name[0])
+            console.log(test.time[0])
+            console.log(test.failure[0]);
         });
         return failedTests;
     });
