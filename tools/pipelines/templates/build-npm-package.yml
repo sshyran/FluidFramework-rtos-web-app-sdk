@@ -200,20 +200,6 @@ stages:
                 fi
               fi
 
-        - task: Bash@3
-          displayName: Test error printing
-          inputs:
-            targetType: inline
-            script: |
-              output=$(node testFunction.js)
-              echo "[error] $output"
-              echo "[error] testline"
-              for n in $output
-              do
-                echo "##[error] $n"
-              done
-            workingDirectory: tools/helper
-
         # Install
         - task: UseNode@1
           displayName: Use Node 14.x
@@ -227,7 +213,19 @@ stages:
             script: |
               ${{ parameters.packageManagerInstallCommand }}
 
-
+        - task: Bash@3
+          displayName: Test error printing
+          inputs:
+            targetType: inline
+            script: |
+              output=$(node testFunction.js)
+              echo "[error] $output"
+              echo "[error] testline"
+              for n in $output
+              do
+                echo "##[error] $n"
+              done
+            workingDirectory: tools/helper
 
         # Set version
         - template: include-set-package-version.yml
