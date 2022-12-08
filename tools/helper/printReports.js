@@ -28,13 +28,13 @@ const parseTestReport = (filename) => {
             failedTests = findFailedTests(res);
         })
 
-        failedTests?.forEach((test) => {
-            console.log("UNFORMATTED TEST:")
-            console.log(test)
-            console.log("PRINT FAILED TESTS:")
-            console.log(test.name[0])
-            console.log(test.failure[0]);
-        });
+        // failedTests?.forEach((test) => {
+        //     console.log("UNFORMATTED TEST:")
+        //     console.log(test)
+        //     console.log("PRINT FAILED TESTS:")
+        //     console.log(test.name[0])
+        //     console.log(test.failure[0]);
+        // });
 
         return failedTests;
     });

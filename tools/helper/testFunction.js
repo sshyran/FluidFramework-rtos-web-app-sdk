@@ -13,15 +13,14 @@ const parseTestReport = () => {
     fs.readFile(filename,  'utf8', (err, data) => {
         let failedTests;
         parser.parseString(data, { mergeAttrs: true }, (err, res) => {
-            console.log("READ FILE RES: ", res)
+            // console.log("READ FILE RES: ", res)
             failedTests = findFailedTests(res);
         })
 
-        failedTests?.forEach((test) => {
-            console.log(test.name[0])
-            console.log(test.failure[0]);
-        });
-
+        // failedTests?.forEach((test) => {
+        //     console.log(test.name[0])
+        //     console.log(test.failure[0]);
+        // });
         return failedTests;
     });
 }
