@@ -213,17 +213,13 @@ stages:
             script: |
               ${{ parameters.packageManagerInstallCommand }}
 
-        # - task: Bash@3
-        #   displayName: Test error printing
-        #   inputs:
-        #     targetType: inline
-        #     script: |
-        #       exec 3< <(node testFunction.js);
-        #       lines=();
-        #       while read -r; do lines+=("$REPLY"); done <&3;
-        #       exec 3<&-;
-        #       echo "##[error] ${lines[@]}";
-        #     workingDirectory: tools/helper
+        - task: Bash@3
+          displayName: Test error printing
+          inputs:
+            targetType: inline
+            script: |
+              node testFunction.js
+            workingDirectory: tools/helper
 
         # Set version
         - template: include-set-package-version.yml
