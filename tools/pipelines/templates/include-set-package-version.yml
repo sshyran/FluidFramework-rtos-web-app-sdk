@@ -63,7 +63,6 @@ steps:
     workingDirectory: ${{ parameters.buildDirectory }}
     script: |
       # Output the help and full command list for debugging purposes
-      which flub
       flub --help
       flub commands
 
