@@ -213,13 +213,13 @@ stages:
             script: |
               ${{ parameters.packageManagerInstallCommand }}
 
-        - task: Bash@3
-          displayName: Test error printing
-          inputs:
-            targetType: inline
-            script: |
-              node testFunction.js
-            workingDirectory: tools/helper
+        # - task: Bash@3
+        #   displayName: Test error printing
+        #   inputs:
+        #     targetType: inline
+        #     script: |
+        #       node testFunction.js
+        #     workingDirectory: tools/helper
 
         # Set version
         - template: include-set-package-version.yml
@@ -313,23 +313,34 @@ stages:
               mergeTestResults: false
             condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
 
+          # Copy Test Reports
           - task: CopyFiles@2
-            displayName: Copy Test Results
+            displayName: Copy Test Reports
             inputs:
               SourceFolder: ${{ parameters.buildDirectory }}/nyc
               Contents: '**/*junit-report.xml'
               TargetFolder: '$(Build.ArtifactStagingDirectory)/testFiles'
-            condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
+            condition: and(succeededOrFailed(), eq(variables['ReportDirExists'], 'true'))
 
-          #test script
-          # - task: CmdLine@2
-          #   displayName: Print Published Reports File Names
-          #   inputs:
-          #     script: |
-          #       output=$(node printReports.js '$(Build.ArtifactStagingDirectory)/testFiles');
-          #       echo ##[error] $output;
-          #     workingDirectory: tools/helper
-          #   condition: and(succeededOrFailed(), eq(variables['startTest'], 'true'))
+          # Install parser library
+          - task: Bash@3
+            displayName: Install xml2js
+            inputs:
+              targetType: inline
+              script: |
+                npm i xml2js
+              workingDirectory: tools/helper
+            condition: and(succeededOrFailed(), eq(variables['ReportDirExists'], 'true'))
+
+          # Console Log Failed Tests
+          - task: Bash@3
+            displayName: Log Failed Tests
+            inputs:
+              targetType: inline
+              script: |
+                node printReports.js '$(Build.ArtifactStagingDirectory)/testFiles'
+              workingDirectory: tools/helper
+            condition: and(succeededOrFailed(), eq(variables['ReportDirExists'], 'true'))
 
           # Print Hello World
           - task: PythonScript@0
