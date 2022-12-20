@@ -192,6 +192,7 @@
     "branchReleaseTypes": {
       "main": "minor",
       "lts": "minor",
+      "test/**": "patch",
       "release/**": "patch",
       "next": "major",
       "*": "minor"
