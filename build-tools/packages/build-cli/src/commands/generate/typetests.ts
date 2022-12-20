@@ -248,6 +248,7 @@ export default class GenerateTypeTestsCommand extends BaseCommand<
                         output.push("Done");
                     } catch (error) {
                         output.push("Error");
+                        this.info(`ERROR: ${error}`);
                         if (typeof error === "string") {
                             this.errorLog(chalk.red(error));
                         } else if (error instanceof Error) {
